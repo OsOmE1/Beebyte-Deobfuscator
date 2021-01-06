@@ -2,6 +2,20 @@
 # Beebyte-Deobfusctator 
 A plugin for Il2CppInspector to deobfuscate types
 
-## Regex examples
-Among Us: ^[A-Z]{11}$  
-Phasmaphobia: ^[A-z0-9]{55}$
+## Usage
+Select one of the options from the dropdown menu  
+![](https://i.imgur.com/mxkyVkY.png)  
+
+Apk deobfuscation can only be used with other apks for compatability reasons.  
+If you select Il2Cpp make sure to select a un-obfuscated GameAssembly.dll and global-metadata.dat  
+If you select Mono make sure to select an un-obfuscated mono compiled Assembly-CSharp.dll located in the games Managed folder.  
+
+The naming regex should correspond to the naming scheme of the Beebyte configuration.  
+For example:  
+NJGFKJNAEMN: `^[A-Z]{11}$` (Among Us)  
+u091Eu091Fu0927u0924u0929u0927u0920u0928u0926u091Cu091D: `^[A-z0-9]{55}$` (Phasmaphobia)  
+
+## Exports
+Theres two different kinds of exports:  
+Plain Text creates a output.txt file with every translation formatted in this way: `ObfuscatedName/DeobfuscatedName`.  
+Classes for [Il2CppTranslator](https://github.com/OsOmE1/Il2CppTranslator) creates classes you can use in your own plugin project.  
