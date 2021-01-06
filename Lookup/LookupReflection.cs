@@ -106,7 +106,22 @@ namespace Beebyte_Deobfuscator.Lookup
         }
         public bool FieldSequenceEqual(IEnumerable<string> baseNames)
         {
-            var fieldBaseNames = this.Fields.Where(f => !f.IsLiteral && !f.IsStatic).Select(f => f.Type.Name).ToList();
+            var fieldBaseNames = Fields.Where(f => !f.IsLiteral && !f.IsStatic).Select(f => f.Type.Name).ToList();
+            var baseNamesList = baseNames.ToList();
+            if (fieldBaseNames.Count != baseNamesList.Count) return false;
+
+            for (int i = 0; i < fieldBaseNames.Count; i++)
+            {
+                if (baseNamesList[i] == "*") continue;
+                if (fieldBaseNames[i] != baseNamesList[i]) return false;
+            }
+
+            return true;
+        }
+
+        public bool StaticFieldSequenceEqual(IEnumerable<string> baseNames)
+        {
+            var fieldBaseNames = Fields.Where(f => !f.IsLiteral && f.IsStatic).Select(f => f.Type.Name).ToList();
             var baseNamesList = baseNames.ToList();
             if (fieldBaseNames.Count != baseNamesList.Count) return false;
 

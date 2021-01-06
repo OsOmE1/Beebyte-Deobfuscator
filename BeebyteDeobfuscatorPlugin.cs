@@ -19,7 +19,7 @@ namespace Beebyte_Deobfuscator
 
         public string Author => "OsOmE1";
 
-        public string Version => "0.7.0";
+        public string Version => "0.7.2";
 
         public string Description => "Performs comparative deobfuscation for beebyte";
 
@@ -111,7 +111,10 @@ namespace Beebyte_Deobfuscator
             MustNotExist = false,
             IsFolder = true,
         };
-        public List<IPluginOption> Options => new List<IPluginOption> { NamingRegex, FileType, MetadataPath, BinaryPath, ApkPath, MonoPath, Export, ExportPath };
+
+        public PluginOptionText PluginName = new PluginOptionText { Name = "plugin-name", Description = "The name of your plugin you want to generate the classes for", Value = "YourPlugin", Required = true };
+
+        public List<IPluginOption> Options => new List<IPluginOption> { NamingRegex, FileType, MetadataPath, BinaryPath, ApkPath, MonoPath, Export, ExportPath, PluginName };
 
         public BeebyteDeobfuscatorPlugin()
         {
@@ -120,6 +123,7 @@ namespace Beebyte_Deobfuscator
             ApkPath.If = () => FileType.Value.Equals(DeobfuscatorType.Apk);
             MonoPath.If = () => FileType.Value.Equals(DeobfuscatorType.Mono);
             ExportPath.If = () => !Export.Value.Equals(ExportType.None);
+            PluginName.If = () => Export.Value.Equals(ExportType.Classes);
         }
 
         public void PostProcessTypeModel(TypeModel model, PluginPostProcessTypeModelEventInfo info)
@@ -129,7 +133,7 @@ namespace Beebyte_Deobfuscator
             LookupModel lookupModel = deobfuscator.Process(model, this);
             if (lookupModel == null) return;
 
-            Task.Run(async () => await Translation.Export(Export.Value, ExportPath.Value, lookupModel));
+            Task.Run(async () => await Translation.Export(this, lookupModel));
             info.IsDataModified = true;
         }
     }

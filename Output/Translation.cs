@@ -52,21 +52,21 @@ namespace Beebyte_Deobfuscator.Output
         {
             return Type switch
             {
-                TranslationType.FieldTranslation => $"            _type.AddField(new FieldTranslator() {{ Offset = 0x{_field.Offset:X}, Static = {(_field.IsStatic ? "true" : "false")}, Name = \"{CleanName}\", TranslateName = true);",
+                TranslationType.FieldTranslation => $"            _type.AddField(new FieldTranslator() {{ Offset = 0x{_field.Offset:X}, Static = {(_field.IsStatic ? "true" : "false")}, Name = \"{CleanName}\", TranslateName = true }});",
                 _ => "",
             };
         }
 
-        public static async Task Export(ExportType exportType, string ExportPath, LookupModel lookupModel)
+        public static async Task Export(BeebyteDeobfuscatorPlugin plugin, LookupModel lookupModel)
         {
             if (!lookupModel.Translations.Any(t => t.CleanName != t.ObfName)) return;
-            switch (exportType)
+            switch (plugin.Export.Value)
             {
                 case ExportType.PlainText:
-                    await ExportPlainText(ExportPath, lookupModel);
+                    await ExportPlainText(plugin.ExportPath.Value, lookupModel);
                     break;
                 case ExportType.Classes:
-                    await ExportClasses(ExportPath, lookupModel);
+                    await ExportClasses(plugin.ExportPath.Value, plugin.PluginName.Value, lookupModel);
                     break;
             }
         }
@@ -84,7 +84,7 @@ namespace Beebyte_Deobfuscator.Output
             output.Close();
         }
 
-        private static async Task ExportClasses(string ExportPath, LookupModel lookupModel)
+        private static async Task ExportClasses(string ExportPath, string pluginName, LookupModel lookupModel)
         {
             foreach (Translation translation in lookupModel.Translations)
             {
@@ -115,22 +115,46 @@ namespace Beebyte_Deobfuscator.Output
         private string GenerateLocater(LookupModel lookupModel)
         {
             if (_type == null) return null;
-            if (_type.Fields.Count(f => !f.IsStatic && !f.IsLiteral) == 0) return "            return null;";
-            List<string> sequence = new List<string>();
+            if (_type.Fields.Count(f => !f.IsStatic && !f.IsLiteral) == 0 && _type.Fields.Count(f => f.IsStatic && !f.IsLiteral) == 0) return "            return null;";
+            List<string> fieldSequence = new List<string>();
+            List<string> staticFieldSequence = new List<string>();
 
-            foreach (LookupField field in _type.Fields.Where(f => !f.IsStatic && !f.IsLiteral))
+            if(_type.Fields.Count(f => !f.IsStatic && !f.IsLiteral) != 0)
+                foreach (LookupField field in _type.Fields.Where(f => !f.IsStatic && !f.IsLiteral))
+                {
+                    if (field.Type.Namespace == "UnityEngine" || field.Type.Namespace == "System") fieldSequence.Add(field.Type.BaseName);
+                    else fieldSequence.Add("*");
+                }
+
+            if (_type.Fields.Count(f => f.IsStatic && !f.IsLiteral) != 0)
+                foreach (LookupField field in _type.Fields.Where(f => f.IsStatic && !f.IsLiteral))
+                {
+                    if (field.Type.Namespace == "UnityEngine" || field.Type.Namespace == "System") staticFieldSequence.Add(field.Type.BaseName);
+                    else staticFieldSequence.Add("*");
+                }
+
+            int fieldSequenceMatchCount = lookupModel.ObfTypes.Count(t => t.FieldSequenceEqual(fieldSequence));
+            int staticFieldSequenceMatchCount = lookupModel.ObfTypes.Count(t => t.StaticFieldSequenceEqual(staticFieldSequence));
+
+            if (fieldSequenceMatchCount > 1 && staticFieldSequenceMatchCount > 1) return "            return null;";
+
+
+            if (fieldSequenceMatchCount == 1)
             {
-                if (field.Type.Namespace == "UnityEngine" || field.Type.Namespace == "System") sequence.Add(field.Type.BaseName);
-                else sequence.Add("*");
+                string locator = "            _type = new TypeTranslator(Helpers.FindTypeWithFieldSequence(new List<string>() { ";
+                fieldSequence.ForEach((s) => locator += $"\"{s}\", ");
+                locator = locator.Remove(locator.Length - 2);
+                locator += " }));";
+                return locator;
             }
-
-            if (lookupModel.ObfTypes.Count(t => t.FieldSequenceEqual(sequence)) > 1) return "            return null;";
-
-            string locator = "            return new TypeTranslator(Helpers.FindTypeWithSequence(new List<string>() { ";
-            sequence.ForEach((s) => locator += $"\"{s}\", ");
-            locator = locator.Remove(locator.Length - 2);
-            locator += " }));";
-            return locator;
+            else
+            {
+                string locator = "            _type = new TypeTranslator(Helpers.FindTypeWithStaticFieldSequence(new List<string>() { ";
+                staticFieldSequence.ForEach((s) => locator += $"\"{s}\", ");
+                locator = locator.Remove(locator.Length - 2);
+                locator += " }));";
+                return locator;
+            }
         }
     }
 }
