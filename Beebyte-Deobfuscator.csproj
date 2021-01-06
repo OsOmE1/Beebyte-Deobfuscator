@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Il2CppInspector.Common">
+      <HintPath>..\..\..\Il2CppInspector\Il2CppInspector.Common\bin\Debug\netcoreapp3.1\Il2CppInspector.Common.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="dnlib" Version="3.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Output\Output.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Output.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Output\Output.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Output.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="mkdir $(SolutionDir)..\..\..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator&#xD;&#xA;copy /y $(TargetPath) $(SolutionDir)..\..\..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator&#xD;&#xA;copy /y $(OutDir)\dnlib.dll $(SolutionDir)..\..\..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator" />
+  </Target>
+
+</Project>
