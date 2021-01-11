@@ -19,3 +19,4 @@ u091Eu091Fu0927u0924u0929u0927u0920u0928u0926u091Cu091D: `^[A-z0-9]{55}$` (Phasm
 Theres two different kinds of exports:  
 Plain Text creates a output.txt file with every translation formatted in this way: `ObfuscatedName/DeobfuscatedName`.  
 Classes for [Il2CppTranslator](https://github.com/OsOmE1/Il2CppTranslator) creates classes you can use in your own plugin project.  
+If you use export Classes you can set your plugin name and it will create all the classes with the namespace `YouPluginName.Translators`.
