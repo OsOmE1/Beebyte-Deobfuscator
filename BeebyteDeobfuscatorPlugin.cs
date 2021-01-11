@@ -129,6 +129,8 @@ namespace Beebyte_Deobfuscator
             PluginName.If = () => Export.Value.Equals(ExportType.Classes);
         }
 
+        public void LoadPipelineStarting(PluginLoadPipelineStartingEventInfo info) => FileFormat = null;
+
         public void PostProcessImage<T>(FileFormatStream<T> stream, PluginPostProcessImageEventInfo data) where T : FileFormatStream<T>
         {
             if(FileFormat == null) FileFormat = stream;
