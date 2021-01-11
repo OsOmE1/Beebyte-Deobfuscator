@@ -14,7 +14,7 @@ namespace Beebyte_Deobfuscator.Deobfuscator
         {
             PluginServices services = PluginServices.For(plugin);
 
-            if (model.Package.BinaryImage is Il2CppInspector.APKReader) throw new System.ArgumentException("APKs can only be deobfuscated with either Mono or APK mode");
+            if (plugin.FileFormat is Il2CppInspector.APKReader) throw new System.ArgumentException("APKs can only be deobfuscated with either Mono or APK mode");
 
             services.StatusUpdate("Loading unobfuscated application");
             var il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromFile(plugin.BinaryPath.Value, plugin.MetadataPath.Value, statusCallback: services.StatusUpdate);

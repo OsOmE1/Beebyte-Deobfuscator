@@ -8,6 +8,7 @@ using Beebyte_Deobfuscator.Deobfuscator;
 using Beebyte_Deobfuscator.Output;
 using System.Threading.Tasks;
 using Beebyte_Deobfuscator.Lookup;
+using Il2CppInspector;
 
 namespace Beebyte_Deobfuscator
 {
@@ -116,6 +117,8 @@ namespace Beebyte_Deobfuscator
 
         public List<IPluginOption> Options => new List<IPluginOption> { NamingRegex, FileType, MetadataPath, BinaryPath, ApkPath, MonoPath, Export, ExportPath, PluginName };
 
+        public object FileFormat;
+
         public BeebyteDeobfuscatorPlugin()
         {
             MetadataPath.If = () => FileType.Value.Equals(DeobfuscatorType.Il2Cpp);
@@ -126,6 +129,10 @@ namespace Beebyte_Deobfuscator
             PluginName.If = () => Export.Value.Equals(ExportType.Classes);
         }
 
+        public void PostProcessImage<T>(FileFormatStream<T> stream, PluginPostProcessImageEventInfo data) where T : FileFormatStream<T>
+        {
+            if(FileFormat == null) FileFormat = stream;
+        }
         public void PostProcessTypeModel(TypeModel model, PluginPostProcessTypeModelEventInfo info)
         {
 

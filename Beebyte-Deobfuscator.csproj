@@ -6,11 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="Bin2Object">
+      <HintPath>..\..\..\Il2CppInspector\Il2CppInspector.Common\bin\Debug\netcoreapp3.1\Bin2Object.dll</HintPath>
+    </Reference>
     <Reference Include="Il2CppInspector.Common">
       <HintPath>..\..\..\Il2CppInspector\Il2CppInspector.Common\bin\Debug\netcoreapp3.1\Il2CppInspector.Common.dll</HintPath>
     </Reference>
   </ItemGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="dnlib" Version="3.3.2" />
   </ItemGroup>
@@ -31,7 +34,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="mkdir $(SolutionDir)..\..\..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator&#xD;&#xA;copy /y $(TargetPath) $(SolutionDir)..\..\..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator&#xD;&#xA;copy /y $(OutDir)\dnlib.dll $(SolutionDir)..\..\..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator" />
+    <Exec Command="mkdir $(SolutionDir)..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator&#xD;&#xA;copy /y $(TargetPath) $(SolutionDir)..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator&#xD;&#xA;copy /y $(OutDir)\dnlib.dll $(SolutionDir)..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator" />
   </Target>
 
 </Project>
