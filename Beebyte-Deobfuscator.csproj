@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="mkdir $(SolutionDir)..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator&#xD;&#xA;copy /y $(TargetPath) $(SolutionDir)..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator&#xD;&#xA;copy /y $(OutDir)\dnlib.dll $(SolutionDir)..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator" />
+    <Exec Command="mkdir $(SolutionDir)..\..\..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator&#xD;&#xA;copy /y $(TargetPath) $(SolutionDir)..\..\..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator&#xD;&#xA;copy /y $(OutDir)\dnlib.dll $(SolutionDir)..\..\..\Il2CppInspector\Il2CppInspector.GUI\bin\Debug\netcoreapp3.1\win-x64\plugins\Beebyte-Deobfuscator" />
   </Target>
 
 </Project>

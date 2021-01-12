@@ -11,7 +11,6 @@ namespace Beebyte_Deobfuscator.Lookup
     public class LookupType
     {
         public string Name { get; set; }
-        public string BaseName { get; set; }
         public List<LookupField> Fields { get; set; }
         public string AssemblyName { get; set; }
         public string Namespace { get; set; }
@@ -39,7 +38,7 @@ namespace Beebyte_Deobfuscator.Lookup
                 return lookupModel.MonoTypeMatches[type];
             }
             lookupModel.ProcessedMonoTypes.Add(type);
-            LookupType t = new LookupType { Name = type.Name, BaseName = type.BaseType.Name, AssemblyName = type.AssemblyQualifiedName, Namespace = type.Namespace, Children = new List<LookupType>() };
+            LookupType t = new LookupType { Name = type.Name, AssemblyName = type.AssemblyQualifiedName, Namespace = type.Namespace, Children = new List<LookupType>() };
             lookupModel.MonoTypeMatches.Add(type, t);
             lookupModel.MonoTypeMatches[type].Fields = LookupField.FieldsFromMono(type.Fields, lookupModel);
             lookupModel.MonoTypeMatches[type].DeclaringType = FromMono(type.DeclaringType, lookupModel);
@@ -71,7 +70,7 @@ namespace Beebyte_Deobfuscator.Lookup
                 return lookupModel.Il2CppTypeMatches[type];
             }
             lookupModel.ProcessedIl2CppTypes.Add(type);
-            LookupType t = new LookupType { Name = type.CSharpName, BaseName = type.CSharpBaseName, AssemblyName = type.Assembly.ShortName, Namespace = type.Namespace, Children = new List<LookupType>(), Il2CppType = type };
+            LookupType t = new LookupType { Name = type.BaseName, AssemblyName = type.Assembly.ShortName, Namespace = type.Namespace, Children = new List<LookupType>(), Il2CppType = type };
             lookupModel.Il2CppTypeMatches.Add(type, t);
             lookupModel.Il2CppTypeMatches[type].Fields = LookupField.FieldsFromIl2Cpp(type.DeclaredFields, lookupModel);
             lookupModel.Il2CppTypeMatches[type].DeclaringType = FromIl2Cpp(type.DeclaringType, lookupModel);
@@ -100,9 +99,10 @@ namespace Beebyte_Deobfuscator.Lookup
         }
         public bool ShouldTranslate(LookupModel lookupModel)
         {
-            return Regex.Match(Name, lookupModel.NamingRegex).Success ||
-                Fields.Count(f => Regex.Match(f.Name, lookupModel.NamingRegex).Success) > 0 ||
-                lookupModel.Translations.Count(t => Fields.Contains(t._field)) > 0;
+            bool test = Regex.Match(Name, lookupModel.NamingRegex).Success;
+            bool test2 = Fields.Count(f => Regex.Match(f.Name, lookupModel.NamingRegex).Success) > 0;
+            bool test3 = lookupModel.Translations.Count(t => Fields.Contains(t._field)) > 0;
+            return test || test2 || test3;
         }
         public bool FieldSequenceEqual(IEnumerable<string> baseNames)
         {
@@ -179,7 +179,7 @@ namespace Beebyte_Deobfuscator.Lookup
         public static LookupField FromIl2Cpp(FieldInfo field, LookupModel lookupModel)
         {
             if (field == null) return new LookupField { };
-            return new LookupField { Name = field.CSharpName, IsStatic = field.IsStatic, IsLiteral = field.IsLiteral, Offset = field.Offset, Type = LookupType.FromIl2Cpp(field.FieldType, lookupModel), DeclaringType = LookupType.FromIl2Cpp(field.DeclaringType, lookupModel), Il2CppField = field };
+            return new LookupField { Name = field.Name, IsStatic = field.IsStatic, IsLiteral = field.IsLiteral, Offset = field.Offset, Type = LookupType.FromIl2Cpp(field.FieldType, lookupModel), DeclaringType = LookupType.FromIl2Cpp(field.DeclaringType, lookupModel), Il2CppField = field };
         }
 
         public static bool IsEmpty(LookupField field)

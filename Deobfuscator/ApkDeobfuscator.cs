@@ -19,7 +19,7 @@ namespace Beebyte_Deobfuscator.Deobfuscator
 
             services.StatusUpdate("Loading unobfuscated APK");
 
-            var il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromPackage(new[] { plugin.ApkPath.Value }, new LoadOptions() { ImageBase = 0, BinaryFilePath = null });
+            var il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromPackage(new[] { plugin.ApkPath.Value }, new LoadOptions() { ImageBase = 0 });
 
             services.StatusUpdate("Creating type model for unobfuscated APK");
             var modelClean = new TypeModel(il2cppClean[0]);

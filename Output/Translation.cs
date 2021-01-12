@@ -122,14 +122,14 @@ namespace Beebyte_Deobfuscator.Output
             if(_type.Fields.Count(f => !f.IsStatic && !f.IsLiteral) != 0)
                 foreach (LookupField field in _type.Fields.Where(f => !f.IsStatic && !f.IsLiteral))
                 {
-                    if (field.Type.Namespace == "UnityEngine" || field.Type.Namespace == "System") fieldSequence.Add(field.Type.BaseName);
+                    if (field.Type.Namespace == "UnityEngine" || field.Type.Namespace == "System") fieldSequence.Add(field.Type.Name);
                     else fieldSequence.Add("*");
                 }
 
             if (_type.Fields.Count(f => f.IsStatic && !f.IsLiteral) != 0)
                 foreach (LookupField field in _type.Fields.Where(f => f.IsStatic && !f.IsLiteral))
                 {
-                    if (field.Type.Namespace == "UnityEngine" || field.Type.Namespace == "System") staticFieldSequence.Add(field.Type.BaseName);
+                    if (field.Type.Namespace == "UnityEngine" || field.Type.Namespace == "System") staticFieldSequence.Add(field.Type.Name);
                     else staticFieldSequence.Add("*");
                 }
 

@@ -13,7 +13,7 @@ If you select Mono make sure to select an un-obfuscated mono compiled Assembly-C
 The naming regex should correspond to the naming scheme of the Beebyte configuration.  
 For example:  
 NJGFKJNAEMN: `^[A-Z]{11}$` (Among Us)  
-u091Eu091Fu0927u0924u0929u0927u0920u0928u0926u091Cu091D: `^[A-z0-9]{55}$` (Phasmaphobia)  
+u091Eu091Fu0927u0924u0929u0927u0920u0928u0926u091Cu091D: `^[\u0900-\u097F]{11}$` (Phasmaphobia)  
 
 ## Exports
 Theres two different kinds of exports:  
