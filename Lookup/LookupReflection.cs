@@ -10,14 +10,49 @@ namespace Beebyte_Deobfuscator.Lookup
 {
     public class LookupType
     {
-        public string Name { get; set; }
+        public TypeInfo Il2CppType { get; set; }
+        public TypeDef MonoType { get; set; }
+
+        public string Name
+        {
+            get
+            {
+                if (Il2CppType != null) return Il2CppType.BaseName;
+                else if (MonoType != null) return MonoType.Name;
+                else return null;
+            }
+            set
+            {
+                if (Il2CppType != null) Il2CppType.Name = value;
+                else MonoType.Name = value;
+            }
+        }
+        public string AssemblyName
+        {
+            get
+            {
+                if (Il2CppType != null) return Il2CppType.Assembly.ShortName;
+                else if (MonoType != null) return MonoType.Module.Assembly.Name;
+                else return null;
+            }
+        }
+        public string Namespace
+        {
+            get
+            {
+                if (Il2CppType != null) return Il2CppType.Namespace;
+                else if (MonoType != null) return MonoType.Namespace;
+                else return null;
+            }
+            set
+            {
+                if (Il2CppType != null) Il2CppType.Name = value;
+                else MonoType.Name = value;
+            }
+        }
         public List<LookupField> Fields { get; set; }
-        public string AssemblyName { get; set; }
-        public string Namespace { get; set; }
         public LookupType DeclaringType { get; set; }
         public List<LookupProperty> Properties { get; set; }
-
-        public TypeInfo Il2CppType { get; set; }
         public List<LookupType> Children { get; set; }
 
         public static List<LookupType> TypesFromMono(IEnumerable<TypeDef> monoTypes, LookupModel lookupModel)
@@ -38,7 +73,7 @@ namespace Beebyte_Deobfuscator.Lookup
                 return lookupModel.MonoTypeMatches[type];
             }
             lookupModel.ProcessedMonoTypes.Add(type);
-            LookupType t = new LookupType { Name = type.Name, AssemblyName = type.AssemblyQualifiedName, Namespace = type.Namespace, Children = new List<LookupType>() };
+            LookupType t = new LookupType { MonoType = type, Children = new List<LookupType>() };
             lookupModel.MonoTypeMatches.Add(type, t);
             lookupModel.MonoTypeMatches[type].Fields = LookupField.FieldsFromMono(type.Fields, lookupModel);
             lookupModel.MonoTypeMatches[type].DeclaringType = FromMono(type.DeclaringType, lookupModel);
@@ -70,7 +105,7 @@ namespace Beebyte_Deobfuscator.Lookup
                 return lookupModel.Il2CppTypeMatches[type];
             }
             lookupModel.ProcessedIl2CppTypes.Add(type);
-            LookupType t = new LookupType { Name = type.BaseName, AssemblyName = type.Assembly.ShortName, Namespace = type.Namespace, Children = new List<LookupType>(), Il2CppType = type };
+            LookupType t = new LookupType { Il2CppType = type, Children = new List<LookupType>() };
             lookupModel.Il2CppTypeMatches.Add(type, t);
             lookupModel.Il2CppTypeMatches[type].Fields = LookupField.FieldsFromIl2Cpp(type.DeclaredFields, lookupModel);
             lookupModel.Il2CppTypeMatches[type].DeclaringType = FromIl2Cpp(type.DeclaringType, lookupModel);
@@ -85,7 +120,7 @@ namespace Beebyte_Deobfuscator.Lookup
         }
         public bool IsEmpty()
         {
-            return string.IsNullOrEmpty(this.Name);
+            return Il2CppType == null && MonoType == null;
         }
         public void SetName(string name, LookupModel lookupModel)
         {

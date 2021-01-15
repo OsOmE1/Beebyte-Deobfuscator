@@ -10,7 +10,7 @@ namespace Beebyte_Deobfuscator.Lookup
     {
         public List<Translation> Translations = new List<Translation>();
 
-        private Dictionary<int, LookupMatrix> Table;
+        private LookupMatrix Matrix;
         private HashSet<int> ReservedKeys;
         private Dictionary<LookupType, LookupType> Matches;
         private HashSet<LookupType> MatchedTypes;
@@ -57,7 +57,6 @@ namespace Beebyte_Deobfuscator.Lookup
 
         private void Init(IEnumerable<LookupType> obfTypes, IEnumerable<LookupType> cleanTypes)
         {
-            Table = new Dictionary<int, LookupMatrix>();
             ReservedKeys = new HashSet<int>();
             Matches = new Dictionary<LookupType, LookupType>();
             MatchedTypes = new HashSet<LookupType>();
@@ -69,48 +68,21 @@ namespace Beebyte_Deobfuscator.Lookup
             ObfTypes = obfTypes.ToHashSet();
             ObfTypeNames = new List<string>();
             ObfTypeNames.AddRange(obfTypes.Select(x => x.Name));
-
-            int x = obfTypes.MaxObject(t => t.Fields.Count(f => f.IsStatic)).Fields.Count(f => f.IsStatic);
-            int y = obfTypes.MaxObject(t => t.Fields.Count(f => f.IsLiteral)).Fields.Count(f => f.IsLiteral);
-            int z = obfTypes.MaxObject(t => t.Fields.Count(f => !f.IsStatic && !f.IsLiteral)).Fields.Count(f => !f.IsStatic && !f.IsLiteral);
-            int w = obfTypes.MaxObject(t => t.Properties.Count).Properties.Count;
-
+            Matrix = new LookupMatrix();
 
             foreach (LookupType type in obfTypes.Where(t => t.ShouldTranslate(this)))
             {
                 if (!type.DeclaringType.IsEmpty()) continue;
 
-                LookupMatrix arr = Lookup(type.Fields.Count);
-                if (arr == null)
-                {
-                    ReservedKeys.Add(type.Fields.Count);
-                    LookupMatrix array = new LookupMatrix(x, y, z, w);
-                    array.Insert(type);
-                    Table.Add(type.Fields.Count, array);
-                }
-                else
-                {
-                    arr.Insert(type);
-                }
+                Matrix.Insert(type);
             }
-        }
-
-        private LookupMatrix Lookup(int key)
-        {
-            return (ReservedKeys.Contains(key))
-               ? Table[key]
-               : null;
         }
 
         public LookupType GetMatchingType(LookupType type, bool checkoffsets)
         {
             LookupType typeInfo = null;
 
-            LookupMatrix arr = Lookup(type.Fields.Count);
-
-            if (arr == null) return typeInfo;
-
-            List<LookupType> types = arr.Get(type);
+            List<LookupType> types = Matrix.Get(type);
 
             if (types.Count() == 1 && types[0] != null)
             {
