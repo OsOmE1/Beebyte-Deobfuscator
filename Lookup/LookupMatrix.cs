@@ -14,22 +14,15 @@ namespace Beebyte_Deobfuscator.Lookup
     }
     class LookupMatrix
     {
-        private HashSet<LookupVertex>[,,,] _matrix;
-        public LookupMatrix(int x, int y, int z, int w)
+        private List<LookupVertex> _matrix;
+        public LookupMatrix()
         {
-            _matrix = new HashSet<LookupVertex>[x * 2 + 1, y * 2 + 1, z * 2 + 1, w * 2 + 1];
+            _matrix = new List<LookupVertex>();
         }
 
         public void Insert(LookupVertex vertex)
         {
-            if (_matrix[vertex.StaticFieldCount, vertex.LiteralFieldCount, vertex.GenericFieldCount, vertex.PropertyCount] == null)
-            {
-                _matrix[vertex.StaticFieldCount, vertex.LiteralFieldCount, vertex.GenericFieldCount, vertex.PropertyCount] = new HashSet<LookupVertex>() { vertex };
-            }
-            else
-            {
-                _matrix[vertex.StaticFieldCount, vertex.LiteralFieldCount, vertex.GenericFieldCount, vertex.PropertyCount].Add(vertex);
-            }
+            _matrix.Add(vertex);
         }
 
         public void Insert(LookupType item)
@@ -37,18 +30,18 @@ namespace Beebyte_Deobfuscator.Lookup
             Insert(new LookupVertex() { Type = item, StaticFieldCount = item.Fields.Count(f => f.IsStatic), LiteralFieldCount = item.Fields.Count(f => f.IsLiteral), GenericFieldCount = item.Fields.Count(f => !f.IsStatic && !f.IsLiteral), PropertyCount = item.Properties.Count });
         }
 
-        public HashSet<LookupVertex> GetVertices(LookupVertex vertex)
+        public List<LookupVertex> GetVertices(LookupVertex vertex)
         {
-            return _matrix[vertex.StaticFieldCount, vertex.LiteralFieldCount, vertex.GenericFieldCount, vertex.PropertyCount];
+            return _matrix.Where(l => l.StaticFieldCount == vertex.StaticFieldCount && l.GenericFieldCount== vertex.GenericFieldCount && l.LiteralFieldCount == vertex.LiteralFieldCount && l.PropertyCount == vertex.PropertyCount).ToList();
         }
 
         public List<LookupType> Get(LookupType item)
         {
-            HashSet<LookupVertex> vertexSet = GetVertices(new LookupVertex() { Type = item, StaticFieldCount = item.Fields.Count(f => f.IsStatic), LiteralFieldCount = item.Fields.Count(f => f.IsLiteral), GenericFieldCount = item.Fields.Count(f => !f.IsStatic && !f.IsLiteral), PropertyCount = item.Properties.Count });
+            List<LookupVertex> vertexSet = GetVertices(new LookupVertex() { Type = item, StaticFieldCount = item.Fields.Count(f => f.IsStatic), LiteralFieldCount = item.Fields.Count(f => f.IsLiteral), GenericFieldCount = item.Fields.Count(f => !f.IsStatic && !f.IsLiteral), PropertyCount = item.Properties.Count });
             List<LookupType> typeList = new List<LookupType>();
             if (vertexSet == null || vertexSet.Count == 0) return typeList;
 
-            typeList.AddRange(vertexSet.Select(x => x.Type));
+            typeList = vertexSet.Select(x => x.Type).ToList();
             return typeList;
         }
     }
