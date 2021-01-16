@@ -14,7 +14,7 @@ The naming regex should correspond to the naming scheme of the Beebyte configura
 For example:  
 NJGFKJNAEMN: `^[A-Z]{11}$` (Among Us)  
 u091Eu091Fu0927u0924u0929u0927u0920u0928u0926u091Cu091D: `^[\u0900-\u097F]{11}$` (Phasmaphobia)  
-
+UOiWPrj: `^[A-Za-\u0082\[\]\^]{7}$` (Garena Free Fire)
 ## Exports
 Theres two different kinds of exports:  
 Plain Text creates a output.txt file with every translation formatted in this way: `ObfuscatedName/DeobfuscatedName`.  
