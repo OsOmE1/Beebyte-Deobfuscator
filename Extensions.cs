@@ -23,8 +23,8 @@ namespace Beebyte_Deobfuscator
             lookupModel.Il2CppTypeMatches.Add(type, t);
             lookupModel.Il2CppTypeMatches[type].Fields = type.DeclaredFields.ToLookupFieldList(lookupModel).ToList();
             lookupModel.Il2CppTypeMatches[type].DeclaringType = type.DeclaringType.ToLookupType(lookupModel);
-            lookupModel.Il2CppTypeMatches[type].Properties = new List<LookupProperty>();
             lookupModel.Il2CppTypeMatches[type].Properties = type.DeclaredProperties.ToLookupPropertyList(lookupModel).ToList();
+            lookupModel.Il2CppTypeMatches[type].Methods = type.DeclaredMethods.ToLookupMethodList(lookupModel).ToList();
 
             if (!lookupModel.Il2CppTypeMatches[type].DeclaringType.IsEmpty)
             {
@@ -44,8 +44,8 @@ namespace Beebyte_Deobfuscator
             lookupModel.MonoTypeMatches.Add(type, t);
             lookupModel.MonoTypeMatches[type].Fields = type.Fields.ToLookupFieldList(lookupModel).ToList();
             lookupModel.MonoTypeMatches[type].DeclaringType = type.DeclaringType.ToLookupType(lookupModel);
-            lookupModel.MonoTypeMatches[type].Properties = new List<LookupProperty>();
             lookupModel.MonoTypeMatches[type].Properties = type.Properties.ToLookupPropertyList(lookupModel).ToList();
+            lookupModel.MonoTypeMatches[type].Methods = type.Methods.ToLookupMethodList(lookupModel).ToList();
 
             if (!lookupModel.MonoTypeMatches[type].DeclaringType.IsEmpty)
             {

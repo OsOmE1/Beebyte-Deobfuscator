@@ -25,9 +25,9 @@ namespace Beebyte_Deobfuscator.Lookup
                     float score = 0.0f;
 
                     if (checkoffsets)
-                        score = (Helpers.CompareFieldOffsets(cleanChild, obfChild) + Helpers.CompareFieldTypes(cleanChild, obfChild)) / 2;
+                        score = (Helpers.CompareFieldOffsets(cleanChild, obfChild, lookupModel) + Helpers.CompareFieldTypes(cleanChild, obfChild, lookupModel)) / 2;
                     else
-                        score = Helpers.CompareFieldTypes(cleanChild, obfChild);
+                        score = Helpers.CompareFieldTypes(cleanChild, obfChild, lookupModel);
 
                     if (score > best_score)
                     {

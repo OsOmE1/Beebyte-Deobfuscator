@@ -9,7 +9,7 @@ namespace Beebyte_Deobfuscator.Lookup
 {
     public class LookupType
     {
-        private LookupModel Parent;
+        private readonly LookupModel Parent;
         public TypeInfo Il2CppType { get; set; }
         public TypeDef MonoType { get; set; }
 
@@ -50,12 +50,22 @@ namespace Beebyte_Deobfuscator.Lookup
                 else MonoType.Name = value;
             }
         }
+        public bool IsEnum  
+        {
+            get
+            {
+                if (Il2CppType != null) return Il2CppType.IsEnum;
+                else if (MonoType != null) return MonoType.IsEnum;
+                else return false;
+            }
+        }
         public bool IsEmpty { get { return Il2CppType == null && MonoType == null; } }
         public bool ShouldTranslate { get { return Regex.Match(Name, Parent.NamingRegex).Success || Fields.Any(f => Regex.Match(f.Name, Parent.NamingRegex).Success) || Fields.Any(f => f.Translated); } }
         public bool Translated { get; private set; } = false;
-        public List<LookupField> Fields { get; set; }
         public LookupType DeclaringType { get; set; }
+        public List<LookupField> Fields { get; set; }
         public List<LookupProperty> Properties { get; set; }
+        public List<LookupMethod> Methods { get; set; }
         public List<LookupType> Children { get; set; }
 
         public LookupType(LookupModel lookupModel) { Parent = lookupModel; }
@@ -69,7 +79,7 @@ namespace Beebyte_Deobfuscator.Lookup
 
             string obfName = Name;
 
-            if (!ShouldTranslate) return;
+            if (!ShouldTranslate || IsEnum) return;
 
             Il2CppType.Name = name;
             Parent.Translations.Add(new Translation(obfName, this));

@@ -1,6 +1,7 @@
 ﻿using Beebyte_Deobfuscator.Output;
 using dnlib.DotNet;
 using Il2CppInspector.Reflection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -110,9 +111,9 @@ namespace Beebyte_Deobfuscator.Lookup
                 float score = 0.0f;
 
                 if (checkoffsets)
-                    score = (Helpers.CompareFieldOffsets(t, type) + Helpers.CompareFieldTypes(t, type)) / 2;
+                    score = (Helpers.CompareFieldOffsets(t, type, this) + Helpers.CompareFieldTypes(t, type, this)) / 2;
                 else
-                    score = Helpers.CompareFieldTypes(t, type);
+                    score = Helpers.CompareFieldTypes(t, type, this);
                 if (score > best_score)
                 {
                     best_score = score;
@@ -127,7 +128,7 @@ namespace Beebyte_Deobfuscator.Lookup
         {
             foreach (LookupType t in CleanTypes)
             {
-                if (!t.DeclaringType.IsEmpty) continue;
+                if (!t.DeclaringType.IsEmpty || t.IsEnum) continue;
                 LookupType matchingType = GetMatchingType(t, checkoffsets);
                 if (matchingType == null) continue;
 
