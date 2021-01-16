@@ -25,7 +25,7 @@ namespace Beebyte_Deobfuscator.Deobfuscator
             var modelClean = new TypeModel(il2cppClean[0]);
 
             services.StatusUpdate("Creating LookupModel for obfuscated APK");
-            LookupModel lookupModel = new LookupModel(modelClean, modelClean, plugin.NamingRegex.Value);
+            LookupModel lookupModel = new LookupModel(model, modelClean, plugin.NamingRegex.Value);
             services.StatusUpdate("Deobfuscating binary");
             lookupModel.TranslateTypes();
 

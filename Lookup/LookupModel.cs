@@ -39,7 +39,7 @@ namespace Beebyte_Deobfuscator.Lookup
             IEnumerable<TypeInfo> obfTypes = obfModel.Types.Where(t => t.Assembly.ShortName == "Assembly-CSharp.dll");
             IEnumerable<TypeInfo> cleanTypes = cleanModel.Types.Where(t => t.Assembly.ShortName == "Assembly-CSharp.dll");
 
-            Init(LookupType.TypesFromIl2Cpp(obfTypes, this), LookupType.TypesFromIl2Cpp(cleanTypes, this));
+            Init(obfTypes.ToLookupTypeList(this), cleanTypes.ToLookupTypeList(this));
         }
         public LookupModel(TypeModel obfModel, IEnumerable<TypeDef> cleanTypes, string namingRegex)
         {
@@ -52,7 +52,7 @@ namespace Beebyte_Deobfuscator.Lookup
 
             IEnumerable<TypeInfo> obfTypes = obfModel.Types.Where(t => t.Assembly.ShortName == "Assembly-CSharp.dll");
 
-            Init(LookupType.TypesFromIl2Cpp(obfTypes, this), LookupType.TypesFromMono(cleanTypes, this));
+            Init(obfTypes.ToLookupTypeList(this), cleanTypes.ToLookupTypeList(this));
         }
 
         private void Init(IEnumerable<LookupType> obfTypes, IEnumerable<LookupType> cleanTypes)
@@ -70,9 +70,9 @@ namespace Beebyte_Deobfuscator.Lookup
             ObfTypeNames.AddRange(obfTypes.Select(x => x.Name));
             Matrix = new LookupMatrix();
 
-            foreach (LookupType type in obfTypes.Where(t => t.ShouldTranslate(this)))
+            foreach (LookupType type in obfTypes.Where(t => t.ShouldTranslate))
             {
-                if (!type.DeclaringType.IsEmpty()) continue;
+                if (!type.DeclaringType.IsEmpty) continue;
 
                 Matrix.Insert(type);
             }
@@ -127,13 +127,13 @@ namespace Beebyte_Deobfuscator.Lookup
         {
             foreach (LookupType t in CleanTypes)
             {
-                if (!t.DeclaringType.IsEmpty()) continue;
+                if (!t.DeclaringType.IsEmpty) continue;
                 LookupType matchingType = GetMatchingType(t, checkoffsets);
                 if (matchingType == null) continue;
 
                 if (matchingType.Children.Count() > 0 && t.Children.Count() > 0) LookupTranslators.TranslateChildren(matchingType, t, checkoffsets, this);
 
-                matchingType.SetName(t.Name, this);
+                matchingType.Name = t.Name;
             }
             TranslateFields(checkoffsets);
         }
