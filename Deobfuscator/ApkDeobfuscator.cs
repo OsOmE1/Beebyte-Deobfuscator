@@ -2,7 +2,6 @@
 using Il2CppInspector;
 using Il2CppInspector.PluginAPI;
 using Il2CppInspector.Reflection;
-using System.Collections.Generic;
 
 namespace Beebyte_Deobfuscator.Deobfuscator
 {

@@ -1,9 +1,6 @@
 ﻿using dnlib.DotNet;
-using dnlib.DotNet.Emit;
-using Il2CppInspector.Reflection;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Beebyte_Deobfuscator.MonoDecompiler
 {
@@ -19,7 +16,7 @@ namespace Beebyte_Deobfuscator.MonoDecompiler
 
         public static MonoDecompiler FromFile(string path)
         {
-            if(!File.Exists(path))
+            if (!File.Exists(path))
             {
                 return null;
             }

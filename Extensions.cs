@@ -65,10 +65,6 @@ namespace Beebyte_Deobfuscator
         {
             foreach (TypeInfo type in il2cppTypes)
             {
-                if(type.Namespace == "message" && Regex.Match(type.BaseName, lookupModel.NamingRegex).Success)
-                {
-
-                }
                 if (type.BaseName.Contains("Module")) continue;
                 yield return type.ToLookupType(lookupModel);
             }
@@ -145,36 +141,6 @@ namespace Beebyte_Deobfuscator
         {
             foreach (MethodInfo method in il2cppMethods)
                 yield return method.ToLookupMethod(lookupModel);
-        }
-    }
-    //From https://stackoverflow.com/questions/1101841/how-to-perform-max-on-a-property-of-all-objects-in-a-collection-and-return-th
-    public static class EnumerableExtensions { 
-        public static T MaxObject<T, U>(this IEnumerable<T> source, Func<T, U> selector) where U : IComparable<U>
-        {
-            if (source == null) throw new ArgumentNullException("source");
-            bool first = true;
-            T maxObj = default(T);
-            U maxKey = default(U);
-            foreach (var item in source)
-            {
-                if (first)
-                {
-                    maxObj = item;
-                    maxKey = selector(maxObj);
-                    first = false;
-                }
-                else
-                {
-                    U currentKey = selector(item);
-                    if (currentKey.CompareTo(maxKey) > 0)
-                    {
-                        maxKey = currentKey;
-                        maxObj = item;
-                    }
-                }
-            }
-            if (first) throw new InvalidOperationException("Sequence is empty.");
-            return maxObj;
         }
     }
 }

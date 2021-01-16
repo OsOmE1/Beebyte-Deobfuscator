@@ -119,7 +119,7 @@ namespace Beebyte_Deobfuscator.Output
             List<string> fieldSequence = new List<string>();
             List<string> staticFieldSequence = new List<string>();
 
-            if(_type.Fields.Count(f => !f.IsStatic && !f.IsLiteral) != 0)
+            if (_type.Fields.Count(f => !f.IsStatic && !f.IsLiteral) != 0)
                 foreach (LookupField field in _type.Fields.Where(f => !f.IsStatic && !f.IsLiteral))
                 {
                     if (field.Type.Namespace == "UnityEngine" || field.Type.Namespace == "System") fieldSequence.Add(field.Type.Name);

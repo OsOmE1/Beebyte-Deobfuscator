@@ -1,14 +1,11 @@
-﻿using System.Linq;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
+﻿using Beebyte_Deobfuscator.Deobfuscator;
+using Beebyte_Deobfuscator.Lookup;
+using Beebyte_Deobfuscator.Output;
+using Il2CppInspector;
 using Il2CppInspector.PluginAPI.V100;
 using Il2CppInspector.Reflection;
-using Il2CppInspector.PluginAPI;
-using Beebyte_Deobfuscator.Deobfuscator;
-using Beebyte_Deobfuscator.Output;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beebyte_Deobfuscator.Lookup;
-using Il2CppInspector;
 
 namespace Beebyte_Deobfuscator
 {
@@ -133,7 +130,7 @@ namespace Beebyte_Deobfuscator
 
         public void PostProcessImage<T>(FileFormatStream<T> stream, PluginPostProcessImageEventInfo data) where T : FileFormatStream<T>
         {
-            if(FileFormat == null) FileFormat = stream;
+            if (FileFormat == null) FileFormat = stream;
         }
         public void PostProcessTypeModel(TypeModel model, PluginPostProcessTypeModelEventInfo info)
         {

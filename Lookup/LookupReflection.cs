@@ -2,7 +2,6 @@
 using dnlib.DotNet;
 using Il2CppInspector.Reflection;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -52,7 +51,7 @@ namespace Beebyte_Deobfuscator.Lookup
             }
         }
         public bool IsEmpty { get { return Il2CppType == null && MonoType == null; } }
-        public bool ShouldTranslate { get { return Regex.Match(Name, Parent.NamingRegex).Success || Fields.Any(f => Regex.Match(f.Name, Parent.NamingRegex).Success) || Fields.Any(f => f.Translated);  }}
+        public bool ShouldTranslate { get { return Regex.Match(Name, Parent.NamingRegex).Success || Fields.Any(f => Regex.Match(f.Name, Parent.NamingRegex).Success) || Fields.Any(f => f.Translated); } }
         public bool Translated { get; private set; } = false;
         public List<LookupField> Fields { get; set; }
         public LookupType DeclaringType { get; set; }
@@ -62,12 +61,12 @@ namespace Beebyte_Deobfuscator.Lookup
         public LookupType(LookupModel lookupModel) { Parent = lookupModel; }
         public void SetName(string name)
         {
-            if(!Regex.Match(Name, Parent.NamingRegex).Success && Fields.Any(f => Regex.Match(f.Name, Parent.NamingRegex).Success))
+            if (!Regex.Match(Name, Parent.NamingRegex).Success && Fields.Any(f => Regex.Match(f.Name, Parent.NamingRegex).Success))
             {
                 Parent.Translations.Add(new Translation(Name, this));
                 return;
             }
-            
+
             string obfName = Name;
 
             if (!ShouldTranslate) return;

@@ -32,7 +32,7 @@ namespace Beebyte_Deobfuscator.Lookup
 
         public List<LookupVertex> GetVertices(LookupVertex vertex)
         {
-            return _matrix.Where(l => l.StaticFieldCount == vertex.StaticFieldCount && l.GenericFieldCount== vertex.GenericFieldCount && l.LiteralFieldCount == vertex.LiteralFieldCount && l.PropertyCount == vertex.PropertyCount && l.Type.Namespace == vertex.Type.Namespace).ToList();
+            return _matrix.Where(l => l.StaticFieldCount == vertex.StaticFieldCount && l.GenericFieldCount == vertex.GenericFieldCount && l.LiteralFieldCount == vertex.LiteralFieldCount && l.PropertyCount == vertex.PropertyCount && l.Type.Namespace == vertex.Type.Namespace).ToList();
         }
 
         public List<LookupType> Get(LookupType item)
