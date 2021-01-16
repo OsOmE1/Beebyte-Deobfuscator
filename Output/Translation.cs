@@ -96,7 +96,7 @@ namespace Beebyte_Deobfuscator.Output
 
                 string start = Output.ClassOutputTop;
                 start = start.Replace("#CLASSNAME#", translation.CleanName);
-                start = start.Replace("#PLUGINNAME#", "TestPlugin");
+                start = start.Replace("#PLUGINNAME#", pluginName);
                 start = start.Replace("#LOCATOR#", translation.GenerateLocater(lookupModel));
                 await output.WriteAsync(start);
 
