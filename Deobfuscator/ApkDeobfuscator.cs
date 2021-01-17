@@ -1,5 +1,6 @@
 ﻿using Beebyte_Deobfuscator.Lookup;
 using Il2CppInspector;
+using Il2CppInspector.Cpp;
 using Il2CppInspector.PluginAPI;
 using Il2CppInspector.Reflection;
 
@@ -14,11 +15,10 @@ namespace Beebyte_Deobfuscator.Deobfuscator
         public LookupModel Process(TypeModel model, BeebyteDeobfuscatorPlugin plugin)
         {
             PluginServices services = PluginServices.For(plugin);
-            if (!(plugin.FileFormat is APKReader)) throw new System.ArgumentException("APK deobfuscation can only be used with obfuscated APKs");
-
             services.StatusUpdate("Loading unobfuscated APK");
 
-            var il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromPackage(new[] { plugin.ApkPath.Value }, new LoadOptions() { ImageBase = 0 });
+            var il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromPackage(new[] { plugin.ApkPath.Value });
+            if (plugin.CompilerType.Value != CppCompiler.GuessFromImage(il2cppClean[0].BinaryImage)) throw new System.ArgumentException("Cross compiler deobfuscation has not been implemented yet");
 
             services.StatusUpdate("Creating type model for unobfuscated APK");
             var modelClean = new TypeModel(il2cppClean[0]);

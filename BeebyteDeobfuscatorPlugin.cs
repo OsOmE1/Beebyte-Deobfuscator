@@ -2,6 +2,7 @@
 using Beebyte_Deobfuscator.Lookup;
 using Beebyte_Deobfuscator.Output;
 using Il2CppInspector;
+using Il2CppInspector.Cpp;
 using Il2CppInspector.PluginAPI.V100;
 using Il2CppInspector.Reflection;
 using System.Collections.Generic;
@@ -114,7 +115,7 @@ namespace Beebyte_Deobfuscator
 
         public List<IPluginOption> Options => new List<IPluginOption> { NamingRegex, FileType, MetadataPath, BinaryPath, ApkPath, MonoPath, Export, ExportPath, PluginName };
 
-        public object FileFormat;
+        public CppCompilerType? CompilerType;
 
         public BeebyteDeobfuscatorPlugin()
         {
@@ -126,11 +127,9 @@ namespace Beebyte_Deobfuscator
             PluginName.If = () => Export.Value.Equals(ExportType.Classes);
         }
 
-        public void LoadPipelineStarting(PluginLoadPipelineStartingEventInfo info) => FileFormat = null;
-
         public void PostProcessImage<T>(FileFormatStream<T> stream, PluginPostProcessImageEventInfo data) where T : FileFormatStream<T>
         {
-            if (FileFormat == null) FileFormat = stream;
+            if (!CompilerType.HasValue) CompilerType = CppCompiler.GuessFromImage(stream);
         }
         public void PostProcessTypeModel(TypeModel model, PluginPostProcessTypeModelEventInfo info)
         {
@@ -141,6 +140,8 @@ namespace Beebyte_Deobfuscator
 
             Task.Run(async () => await Translation.Export(this, lookupModel));
             info.IsDataModified = true;
+
+            CompilerType = null;
         }
     }
 }
