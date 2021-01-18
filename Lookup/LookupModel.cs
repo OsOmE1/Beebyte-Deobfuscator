@@ -12,15 +12,41 @@ namespace Beebyte_Deobfuscator.Lookup
         public List<Translation> Translations = new List<Translation>();
 
         private LookupMatrix Matrix;
-        private HashSet<int> ReservedKeys;
         private Dictionary<LookupType, LookupType> Matches;
         private HashSet<LookupType> MatchedTypes;
 
-        public List<string> CleanTypeNames;
-        public HashSet<LookupType> CleanTypes;
-        public List<string> ObfTypeNames;
-        public HashSet<LookupType> ObfTypes;
-
+        private List<string> CleanTypeNameData;
+        public List<string> CleanTypeNames
+        {
+            get
+            {
+                return CleanTypeNameData;
+            }
+        }
+        private List<LookupType> CleanTypeData;
+        public List<LookupType> CleanTypes
+        {
+            get
+            {
+                return CleanTypeData;
+            }
+        }
+        private List<string> ObfTypeNameData;
+        public List<string> ObfTypeNames
+        {
+            get
+            {
+                return ObfTypeNameData;
+            }
+        }
+        public List<LookupType> ObfTypeData;
+        public List<LookupType> ObfTypes
+        {
+            get
+            {
+                return ObfTypeData;
+            }
+        }
         public List<TypeDef> ProcessedMonoTypes = new List<TypeDef>();
         public List<TypeInfo> ProcessedIl2CppTypes = new List<TypeInfo>();
         public Dictionary<TypeDef, LookupType> MonoTypeMatches = new Dictionary<TypeDef, LookupType>();
@@ -58,17 +84,16 @@ namespace Beebyte_Deobfuscator.Lookup
 
         private void Init(IEnumerable<LookupType> obfTypes, IEnumerable<LookupType> cleanTypes)
         {
-            ReservedKeys = new HashSet<int>();
             Matches = new Dictionary<LookupType, LookupType>();
             MatchedTypes = new HashSet<LookupType>();
 
-            CleanTypes = cleanTypes.ToHashSet();
-            CleanTypeNames = new List<string>();
-            CleanTypeNames.AddRange(cleanTypes.Select(x => x.Name));
+            CleanTypeData = cleanTypes.ToList();
+            CleanTypeNameData = new List<string>();
+            CleanTypeNameData.AddRange(cleanTypes.Select(x => x.Name));
 
-            ObfTypes = obfTypes.ToHashSet();
-            ObfTypeNames = new List<string>();
-            ObfTypeNames.AddRange(obfTypes.Select(x => x.Name));
+            ObfTypeData = obfTypes.ToList();
+            ObfTypeNameData = new List<string>();
+            ObfTypeNameData.AddRange(obfTypes.Select(x => x.Name));
             Matrix = new LookupMatrix();
 
             foreach (LookupType type in obfTypes.Where(t => t.ShouldTranslate))
@@ -120,7 +145,11 @@ namespace Beebyte_Deobfuscator.Lookup
                     typeInfo = t;
                 }
             }
-            if (typeInfo != null && !MatchedTypes.Contains(typeInfo)) Matches.Add(typeInfo, type); MatchedTypes.Add(typeInfo);
+            if (typeInfo != null && !MatchedTypes.Contains(typeInfo)) 
+            {
+                Matches.Add(typeInfo, type);
+                MatchedTypes.Add(typeInfo);
+            }
             return typeInfo;
         }
 

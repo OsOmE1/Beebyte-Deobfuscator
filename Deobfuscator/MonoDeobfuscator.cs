@@ -17,12 +17,12 @@ namespace Beebyte_Deobfuscator.Deobfuscator
 
             services.StatusUpdate("Creating model for Mono dll");
             if (plugin.CompilerType.Value != CppCompilerType.MSVC) throw new System.ArgumentException("Cross compiler deobfuscation has not been implemented yet");
-            MonoDecompiler.MonoDecompiler monoDecompiler = MonoDecompiler.MonoDecompiler.FromFile(plugin.MonoPath.Value);
+            MonoDecompiler.MonoDecompiler monoDecompiler = MonoDecompiler.MonoDecompiler.FromFile(plugin.MonoPath);
             if (monoDecompiler == null) return null;
 
             services.StatusUpdate("Creating LookupModel for obfuscated application");
 
-            LookupModel lookupModel = new LookupModel(model, monoDecompiler.GetTypes(), plugin.NamingRegex.Value);
+            LookupModel lookupModel = new LookupModel(model, monoDecompiler.GetTypes(), plugin.NamingRegex);
             services.StatusUpdate("Deobfuscating binary");
             lookupModel.TranslateTypes();
             return lookupModel;

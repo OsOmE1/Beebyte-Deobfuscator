@@ -20,12 +20,12 @@ namespace Beebyte_Deobfuscator.Output
     }
     public class Translation
     {
-        TranslationType Type;
+        private readonly TranslationType Type;
         string ObfName;
         string CleanName;
 
         public LookupField _field;
-        public LookupType _type;
+        private LookupType _type;
 
         public Translation(string obfName, LookupType type)
         {
@@ -60,13 +60,13 @@ namespace Beebyte_Deobfuscator.Output
         public static async Task Export(BeebyteDeobfuscatorPlugin plugin, LookupModel lookupModel)
         {
             if (!lookupModel.Translations.Any(t => t.CleanName != t.ObfName)) return;
-            switch (plugin.Export.Value)
+            switch (plugin.Export)
             {
                 case ExportType.PlainText:
-                    await ExportPlainText(plugin.ExportPath.Value, lookupModel);
+                    await ExportPlainText(plugin.ExportPath, lookupModel);
                     break;
                 case ExportType.Classes:
-                    await ExportClasses(plugin.ExportPath.Value, plugin.PluginName.Value, lookupModel);
+                    await ExportClasses(plugin.ExportPath, plugin.PluginName, lookupModel);
                     break;
             }
         }

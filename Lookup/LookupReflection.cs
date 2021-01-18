@@ -61,7 +61,7 @@ namespace Beebyte_Deobfuscator.Lookup
         }
         public bool IsEmpty { get { return Il2CppType == null && MonoType == null; } }
         public bool ShouldTranslate { get { return Regex.Match(Name, Parent.NamingRegex).Success || Fields.Any(f => Regex.Match(f.Name, Parent.NamingRegex).Success) || Fields.Any(f => f.Translated); } }
-        public bool Translated { get; private set; } = false;
+        public bool Translated { get; private set; }
         public LookupType DeclaringType { get; set; }
         public List<LookupField> Fields { get; set; }
         public List<LookupProperty> Properties { get; set; }
@@ -161,7 +161,7 @@ namespace Beebyte_Deobfuscator.Lookup
                 else return 0x0;
             }
         }
-        public bool Translated { get; private set; } = false;
+        public bool Translated { get; private set; }
         public bool IsEmpty { get { return Il2CppField == null && MonoField == null; } }
         public LookupType Type { get; set; }
         public LookupType DeclaringType { get; set; }
@@ -242,7 +242,7 @@ namespace Beebyte_Deobfuscator.Lookup
         public LookupType ReturnType { get; set; }
         public List<LookupType> ParameterList { get; set; }
 
-        public bool Translated { get; private set; } = false;
+        public bool Translated { get; private set; }
         public bool IsEmpty { get { return Il2CppMethod == null && MonoMethod == null; } }
 
         public LookupMethod(LookupModel lookupModel) { Parent = lookupModel; }

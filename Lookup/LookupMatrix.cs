@@ -14,7 +14,7 @@ namespace Beebyte_Deobfuscator.Lookup
     }
     class LookupMatrix
     {
-        private List<LookupVertex> _matrix;
+        private readonly List<LookupVertex> _matrix;
         public LookupMatrix()
         {
             _matrix = new List<LookupVertex>();

@@ -34,7 +34,7 @@ namespace Beebyte_Deobfuscator
         }
         public static LookupType ToLookupType(this TypeDef type, LookupModel lookupModel)
         {
-            if (type == null) return new LookupType(lookupModel) { };
+            if (type == null) return new LookupType(lookupModel);
             if (lookupModel.ProcessedMonoTypes.Contains(type))
             {
                 return lookupModel.MonoTypeMatches[type];
