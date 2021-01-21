@@ -5,6 +5,7 @@ using Il2CppInspector;
 using Il2CppInspector.Cpp;
 using Il2CppInspector.PluginAPI.V100;
 using Il2CppInspector.Reflection;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -33,14 +34,13 @@ namespace Beebyte_Deobfuscator
         private PluginOptionChoice<DeobfuscatorType> FileTypeOption = new PluginOptionChoice<DeobfuscatorType>
         {
             Name = "Compiler",
-            Description = "Select Unity compiler",
+            Description = "Select Unity Scripting backend",
             Required = true,
             Value = DeobfuscatorType.Il2Cpp,
 
             Choices = new Dictionary<DeobfuscatorType, string>
             {
                 [DeobfuscatorType.Il2Cpp] = "Il2Cpp",
-                [DeobfuscatorType.Apk] = "APK",
                 [DeobfuscatorType.Mono] = "Mono"
             },
 
@@ -57,11 +57,9 @@ namespace Beebyte_Deobfuscator
         {
             Name = "clean-metadata-path",
             Description = "Path to unobfuscated global-metadata.dat",
-            Required = true,
-            MustExist = true,
+            MustExist = false,
             MustNotExist = false,
             IsFolder = false,
-            Validate = path => path.ToLower().EndsWith(".dat") ? true : throw new System.IO.FileNotFoundException($"You must supply a Data file", path)
         };
         public string MetadataPath
         {
@@ -73,34 +71,26 @@ namespace Beebyte_Deobfuscator
         public PluginOptionFilePath BinaryPathOption = new PluginOptionFilePath
         {
             Name = "clean-binary-path",
-            Description = "Path to unobfuscated GameAssembly.dll",
+            Description = "Path to unobfuscated GameAssembly.dll or Package",
             Required = true,
             MustExist = true,
             MustNotExist = false,
             IsFolder = false,
-            Validate = path => path.ToLower().EndsWith(".dll") ? true : throw new System.IO.FileNotFoundException($"You must supply a DLL file", path)
+            AllowedExtensions = new Dictionary<string, string>
+            {
+                ["dll"] = "DLL files",
+                ["apk"] = "APK",
+                ["apkx"] = "APKX",
+                ["zip"] = "Zip Archive",
+                ["ipa"] = "IPA",
+                ["aab"] = "AAB",
+            }
         };
         public string BinaryPath
         {
             get
             {
                 return BinaryPathOption.Value;
-            }
-        }
-        public PluginOptionFilePath ApkPathOption = new PluginOptionFilePath
-        {
-            Name = "clean-apk-path",
-            Description = "Path to unobfuscated APK package file",
-            Required = true,
-            MustExist = true,
-            MustNotExist = false,
-            IsFolder = false,
-        };
-        public string ApkPath
-        {
-            get
-            {
-                return ApkPathOption.Value;
             }
         }
         public PluginOptionFilePath MonoPathOption = new PluginOptionFilePath
@@ -167,7 +157,7 @@ namespace Beebyte_Deobfuscator
                 return PluginNameOption.Value;
             }
         }
-        public List<IPluginOption> Options => new List<IPluginOption> { NamingRegexOption, FileTypeOption, MetadataPathOption, BinaryPathOption, ApkPathOption, MonoPathOption, ExportOption, ExportPathOption, PluginNameOption };
+        public List<IPluginOption> Options => new List<IPluginOption> { NamingRegexOption, FileTypeOption, MetadataPathOption, BinaryPathOption, MonoPathOption, ExportOption, ExportPathOption, PluginNameOption };
 
         public CppCompilerType? CompilerType;
 
@@ -175,7 +165,6 @@ namespace Beebyte_Deobfuscator
         {
             MetadataPathOption.If = () => FileType.Equals(DeobfuscatorType.Il2Cpp);
             BinaryPathOption.If = () => FileType.Equals(DeobfuscatorType.Il2Cpp);
-            ApkPathOption.If = () => FileType.Equals(DeobfuscatorType.Apk);
             MonoPathOption.If = () => FileType.Equals(DeobfuscatorType.Mono);
             ExportPathOption.If = () => !Export.Equals(ExportType.None);
             PluginNameOption.If = () => Export.Equals(ExportType.Classes);
@@ -187,8 +176,7 @@ namespace Beebyte_Deobfuscator
         }
         public void PostProcessTypeModel(TypeModel model, PluginPostProcessTypeModelEventInfo info)
         {
-
-            IDeobfuscator deobfuscator = Deobfuscator.Deobfuscator.GetDeobfuscator(FileType.Value);
+            IDeobfuscator deobfuscator = Deobfuscator.Deobfuscator.GetDeobfuscator(FileType);
             LookupModel lookupModel = deobfuscator.Process(model, this);
             if (lookupModel == null) return;
 

@@ -6,7 +6,6 @@ namespace Beebyte_Deobfuscator.Deobfuscator
     public enum DeobfuscatorType
     {
         Il2Cpp,
-        Apk,
         Mono
     }
     public class Deobfuscator
@@ -16,7 +15,6 @@ namespace Beebyte_Deobfuscator.Deobfuscator
             return type switch
             {
                 DeobfuscatorType.Il2Cpp => new Il2CppDeobfuscator(),
-                DeobfuscatorType.Apk => new ApkDeobfuscator(),
                 DeobfuscatorType.Mono => new MonoDeobfuscator(),
                 _ => null,
             };

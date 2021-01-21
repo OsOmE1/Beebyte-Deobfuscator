@@ -7,6 +7,16 @@ using System.Text.RegularExpressions;
 
 namespace Beebyte_Deobfuscator.Lookup
 {
+    public class LookupModule
+    {
+        public readonly List<string> Namespaces;
+        public readonly List<LookupType> Types;
+        public LookupModule(List<string> namespaces, List<LookupType> types)
+        {
+            Namespaces = namespaces;
+            Types = types;
+        }
+    }
     public class LookupType
     {
         private readonly LookupModel Parent;
@@ -236,6 +246,15 @@ namespace Beebyte_Deobfuscator.Lookup
             {
                 if (Il2CppMethod != null) SetName(value);
                 else MonoMethod.Name = value;
+            }
+        }
+
+        public MethodBase Method
+        {
+            get
+            {
+                if (Il2CppMethod != null) return Il2CppMethod.GetGenericMethodDefinition();
+                else return null;
             }
         }
         public LookupType DeclaringType { get; set; }

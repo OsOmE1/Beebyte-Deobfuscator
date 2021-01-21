@@ -10,7 +10,11 @@ using System.Text.RegularExpressions;
 namespace Beebyte_Deobfuscator
 {
     public static class Extensions
-    {
+    {   
+        public static LookupModule ToLookupModule(this TypeModel model, LookupModel lookupModel)
+        {
+            return new LookupModule(model.Namespaces, model.Types.Where(t => t.Assembly.ShortName == "Assembly-CSharp.dll").ToLookupTypeList(lookupModel).ToList());
+        }
         public static LookupType ToLookupType(this TypeInfo type, LookupModel lookupModel)
         {
             if (type == null) return new LookupType(lookupModel) { };
@@ -114,6 +118,7 @@ namespace Beebyte_Deobfuscator
         }
         public static LookupMethod ToLookupMethod(this MethodDef method, LookupModel lookupModel)
         {
+            if (method == null) return new LookupMethod(lookupModel) { };
             List<LookupType> ParameterList = new List<LookupType>();
             IEnumerator<Parameter> parameters = method.Parameters.GetEnumerator();
             while (parameters.MoveNext())

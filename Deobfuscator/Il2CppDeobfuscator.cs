@@ -16,13 +16,19 @@ namespace Beebyte_Deobfuscator.Deobfuscator
             PluginServices services = PluginServices.For(plugin);
 
             services.StatusUpdate("Loading unobfuscated application");
-            var il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromFile(plugin.BinaryPath, plugin.MetadataPath, statusCallback: services.StatusUpdate);
-            if (plugin.CompilerType.Value != CppCompiler.GuessFromImage(il2cppClean[0].BinaryImage)) throw new System.ArgumentException("Cross compiler deobfuscation has not been implemented yet");
+            var il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromPackage(new[] { plugin.BinaryPath });
+            if(il2cppClean == null) il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromFile(plugin.BinaryPath, plugin.MetadataPath, statusCallback: services.StatusUpdate);
+            
+            if (plugin.CompilerType.Value != CppCompiler.GuessFromImage(il2cppClean[0].BinaryImage))
+            {
+                throw new System.ArgumentException("Cross compiler deobfuscation has not been implemented yet");
+            }
             services.StatusUpdate("Creating type model for unobfuscated application");
             var modelClean = new TypeModel(il2cppClean[0]);
 
             services.StatusUpdate("Creating LookupModel for obfuscated application");
-            LookupModel lookupModel = new LookupModel(model, modelClean, plugin.NamingRegex);
+            LookupModel lookupModel = new LookupModel(plugin.NamingRegex);
+            lookupModel.Init(model.ToLookupModule(lookupModel), modelClean.ToLookupModule(lookupModel));
             services.StatusUpdate("Deobfuscating binary");
             lookupModel.TranslateTypes(true);
             return lookupModel;

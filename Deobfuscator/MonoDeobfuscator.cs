@@ -22,7 +22,8 @@ namespace Beebyte_Deobfuscator.Deobfuscator
 
             services.StatusUpdate("Creating LookupModel for obfuscated application");
 
-            LookupModel lookupModel = new LookupModel(model, monoDecompiler.GetTypes(), plugin.NamingRegex);
+            LookupModel lookupModel = new LookupModel(plugin.NamingRegex);
+            lookupModel.Init(model.ToLookupModule(lookupModel), monoDecompiler.GetLookupModule(lookupModel));
             services.StatusUpdate("Deobfuscating binary");
             lookupModel.TranslateTypes();
             return lookupModel;
