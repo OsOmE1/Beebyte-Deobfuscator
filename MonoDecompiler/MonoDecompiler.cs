@@ -20,7 +20,7 @@ namespace Beebyte_Deobfuscator.MonoDecompiler
             List<string> namespaces = new List<string>();
             foreach(LookupType type in types)
             {
-                if (type != null) continue;
+                if (type == null) continue;
                 if (!namespaces.Contains(type.Namespace)) namespaces.Add(type.Namespace);
             }
             return new LookupModule(namespaces, types);
