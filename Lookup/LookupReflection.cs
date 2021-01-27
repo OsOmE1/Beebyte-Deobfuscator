@@ -9,7 +9,7 @@ namespace Beebyte_Deobfuscator.Lookup
 {
     public class LookupModule
     {
-        public readonly List<string> Namespaces;
+        public List<string> Namespaces;
         public readonly List<LookupType> Types;
         public LookupModule(List<string> namespaces, List<LookupType> types)
         {

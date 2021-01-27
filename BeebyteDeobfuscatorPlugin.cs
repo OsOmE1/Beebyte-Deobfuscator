@@ -19,11 +19,11 @@ namespace Beebyte_Deobfuscator
 
         public string Author => "OsOmE1";
 
-        public string Version => "0.7.2";
+        public string Version => "1.0.0";
 
         public string Description => "Performs comparative deobfuscation for beebyte";
 
-        public PluginOptionText NamingRegexOption = new PluginOptionText { Name = "naming-pattern", Description = "Regex pattern for the beebyte naming scheme", Value = "", Required = true, Validate = text => Helpers.IsValidRegex(text) ? true : throw new System.ArgumentException("Must be valid regex!") };
+        public PluginOptionText NamingRegexOption = new PluginOptionText { Name = "naming-pattern", Description = "Regex pattern for the beebyte naming scheme", Value = "", Required = true, Validate = text => Helpers.IsValidRegex(text) ? true : throw new ArgumentException("Must be valid regex!") };
         public string NamingRegex
         {
             get
@@ -33,7 +33,7 @@ namespace Beebyte_Deobfuscator
         }
         private PluginOptionChoice<DeobfuscatorType> FileTypeOption = new PluginOptionChoice<DeobfuscatorType>
         {
-            Name = "Compiler",
+            Name = "compiler",
             Description = "Select Unity Scripting backend",
             Required = true,
             Value = DeobfuscatorType.Il2Cpp,
@@ -60,6 +60,7 @@ namespace Beebyte_Deobfuscator
             MustExist = false,
             MustNotExist = false,
             IsFolder = false,
+            Required = false,
         };
         public string MetadataPath
         {
@@ -112,7 +113,7 @@ namespace Beebyte_Deobfuscator
         }
         public PluginOptionChoice<ExportType> ExportOption = new PluginOptionChoice<ExportType>
         {
-            Name = "Export",
+            Name = "export",
             Description = "Select export option",
             Required = true,
             Value = ExportType.None,
@@ -178,8 +179,9 @@ namespace Beebyte_Deobfuscator
         {
             IDeobfuscator deobfuscator = Deobfuscator.Deobfuscator.GetDeobfuscator(FileType);
             LookupModel lookupModel = deobfuscator.Process(model, this);
-            if (lookupModel == null) return;
+            if (lookupModel == null) throw new ArgumentException("Could not deobfuscate application");
 
+            if(lookupModel.Translations.Count == 0) throw new ArgumentException("Nothing was deobfuscated");
             Task.Run(async () => await Translation.Export(this, lookupModel));
             info.IsDataModified = true;
 

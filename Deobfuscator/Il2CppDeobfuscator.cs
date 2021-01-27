@@ -19,12 +19,15 @@ namespace Beebyte_Deobfuscator.Deobfuscator
             var il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromPackage(new[] { plugin.BinaryPath });
             if(il2cppClean == null) il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromFile(plugin.BinaryPath, plugin.MetadataPath, statusCallback: services.StatusUpdate);
             
+            if (il2cppClean == null) throw new System.ArgumentException("Could not load unobfuscated application");
+
             if (plugin.CompilerType.Value != CppCompiler.GuessFromImage(il2cppClean[0].BinaryImage))
             {
                 throw new System.ArgumentException("Cross compiler deobfuscation has not been implemented yet");
             }
             services.StatusUpdate("Creating type model for unobfuscated application");
             var modelClean = new TypeModel(il2cppClean[0]);
+            if (modelClean == null) throw new System.ArgumentException("Could not create type model for unobfuscated application");
 
             services.StatusUpdate("Creating LookupModel for obfuscated application");
             LookupModel lookupModel = new LookupModel(plugin.NamingRegex);
