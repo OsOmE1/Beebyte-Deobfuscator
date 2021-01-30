@@ -17,7 +17,7 @@ namespace Beebyte_Deobfuscator.Lookup
 
                 foreach (LookupType cleanChild in cleanChildren.Where(t => t.Fields.Count == obfChild.Fields.Count))
                 {
-                    if (cleanChild.Name.Equals(obfChild.Name))
+                    if (cleanChild.Name == obfChild.Name)
                     {
                         best_match = cleanChild;
                         break;
@@ -28,7 +28,7 @@ namespace Beebyte_Deobfuscator.Lookup
                     {
                         score = (Helpers.CompareFieldOffsets(cleanChild, obfChild, lookupModel) + Helpers.CompareFieldTypes(cleanChild, obfChild, lookupModel)) / 2;
                     }
-                    else 
+                    else
                     {
                         score = Helpers.CompareFieldTypes(cleanChild, obfChild, lookupModel);
                     }
@@ -39,19 +39,26 @@ namespace Beebyte_Deobfuscator.Lookup
                         best_match = cleanChild;
                     }
                 }
-                if (best_match == null) continue;
+                if (best_match == null)
+                {
+                    continue;
+                }
 
                 obfChild.Name = best_match.Name;
                 TranslateFields(obfChild, best_match, checkoffsets, lookupModel);
             }
         }
+
         public static void TranslateFields(LookupType obfType, LookupType cleanType, bool checkoffsets, LookupModel lookupModel)
         {
             List<LookupField> obfGenericFields = obfType.Fields.Where(f => !f.IsStatic && !f.IsLiteral).ToList();
             List<LookupField> cleanGenericFields = cleanType.Fields.Where(f => !f.IsStatic && !f.IsLiteral).ToList();
             foreach (var obField in obfGenericFields.Select((Value, Index) => new { Value, Index }))
             {
-                if (cleanGenericFields.Count() == obField.Index) break;
+                if (cleanGenericFields.Count() == obField.Index)
+                {
+                    break;
+                }
 
                 LookupField cleanField = cleanGenericFields[obField.Index];
                 if ((obField.Value.Offset == cleanField.Offset || !checkoffsets) && obField.Value.Name != cleanField.Name)
@@ -64,7 +71,10 @@ namespace Beebyte_Deobfuscator.Lookup
             List<LookupField> cleanStaticFields = cleanType.Fields.Where(f => f.IsStatic).ToList();
             foreach (var obField in obfStaticFields.Select((Value, Index) => new { Value, Index }))
             {
-                if (cleanStaticFields.Count() == obField.Index) break;
+                if (cleanStaticFields.Count() == obField.Index)
+                {
+                    break;
+                }
 
                 LookupField cleanField = cleanStaticFields[obField.Index];
                 if ((obField.Value.Offset == cleanField.Offset || !checkoffsets) && obField.Value.Name != cleanField.Name)

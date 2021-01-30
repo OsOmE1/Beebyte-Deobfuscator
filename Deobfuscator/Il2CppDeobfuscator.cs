@@ -7,19 +7,26 @@ namespace Beebyte_Deobfuscator.Deobfuscator
 {
     public class Il2CppDeobfuscator : IDeobfuscator
     {
-        public Il2CppDeobfuscator()
-        {
-
-        }
         public LookupModel Process(TypeModel model, BeebyteDeobfuscatorPlugin plugin)
         {
+            if (!plugin.CompilerType.HasValue)
+            {
+                return null;
+            }
+
             PluginServices services = PluginServices.For(plugin);
 
             services.StatusUpdate("Loading unobfuscated application");
-            var il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromPackage(new[] { plugin.BinaryPath });
-            if(il2cppClean == null) il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromFile(plugin.BinaryPath, plugin.MetadataPath, statusCallback: services.StatusUpdate);
-            
-            if (il2cppClean == null) throw new System.ArgumentException("Could not load unobfuscated application");
+            var il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromPackage(new[] { plugin.BinaryPath }, statusCallback: services.StatusUpdate);
+            if (il2cppClean == null)
+            {
+                il2cppClean = Il2CppInspector.Il2CppInspector.LoadFromFile(plugin.BinaryPath, plugin.MetadataPath, statusCallback: services.StatusUpdate);
+            }
+
+            if (il2cppClean == null)
+            {
+                throw new System.ArgumentException("Could not load unobfuscated application");
+            }
 
             if (plugin.CompilerType.Value != CppCompiler.GuessFromImage(il2cppClean[0].BinaryImage))
             {
@@ -27,13 +34,18 @@ namespace Beebyte_Deobfuscator.Deobfuscator
             }
             services.StatusUpdate("Creating type model for unobfuscated application");
             var modelClean = new TypeModel(il2cppClean[0]);
-            if (modelClean == null) throw new System.ArgumentException("Could not create type model for unobfuscated application");
+            if (modelClean == null)
+            {
+                throw new System.ArgumentException("Could not create type model for unobfuscated application");
+            }
 
             services.StatusUpdate("Creating LookupModel for obfuscated application");
             LookupModel lookupModel = new LookupModel(plugin.NamingRegex);
-            lookupModel.Init(model.ToLookupModule(lookupModel), modelClean.ToLookupModule(lookupModel));
+            lookupModel.Init(model.ToLookupModule(lookupModel, statusCallback: services.StatusUpdate), modelClean.ToLookupModule(lookupModel, statusCallback: services.StatusUpdate));
             services.StatusUpdate("Deobfuscating binary");
-            lookupModel.TranslateTypes(true);
+            lookupModel.TranslateTypes(true, statusCallback: services.StatusUpdate);
+
+            plugin.CompilerType = null;
             return lookupModel;
         }
     }

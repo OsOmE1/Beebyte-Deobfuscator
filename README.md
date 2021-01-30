@@ -4,6 +4,9 @@
 A plugin for Il2CppInspector to deobfuscate types
 
 ## Usage
+
+#### Important: For this plugin to work you have to have an un-obfuscated or less obfuscated version of the game.
+
 Select one of the options from the dropdown menu  
 ![](https://i.imgur.com/f2QnEdH.png)  
 

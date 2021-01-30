@@ -3,11 +3,17 @@ using Il2CppInspector.Reflection;
 
 namespace Beebyte_Deobfuscator.Deobfuscator
 {
+    public interface IDeobfuscator
+    {
+        public LookupModel Process(TypeModel obfModel, BeebyteDeobfuscatorPlugin plugin);
+    }
+
     public enum DeobfuscatorType
     {
         Il2Cpp,
         Mono
     }
+
     public class Deobfuscator
     {
         public static IDeobfuscator GetDeobfuscator(DeobfuscatorType type)
@@ -19,10 +25,5 @@ namespace Beebyte_Deobfuscator.Deobfuscator
                 _ => null,
             };
         }
-    }
-
-    public interface IDeobfuscator
-    {
-        public LookupModel Process(TypeModel obfModel, BeebyteDeobfuscatorPlugin plugin);
     }
 }

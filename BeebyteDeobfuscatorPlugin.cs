@@ -7,7 +7,6 @@ using Il2CppInspector.PluginAPI.V100;
 using Il2CppInspector.Reflection;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Beebyte_Deobfuscator
 {
@@ -21,19 +20,21 @@ namespace Beebyte_Deobfuscator
 
         public string Version => "1.0.0";
 
-        public string Description => "Performs comparative deobfuscation for beebyte";
+        public string Description => "Performs comparative deobfuscation for Beebyte";
 
-        public PluginOptionText NamingRegexOption = new PluginOptionText { Name = "naming-pattern", Description = "Regex pattern for the beebyte naming scheme", Value = "", Required = true, Validate = text => Helpers.IsValidRegex(text) ? true : throw new ArgumentException("Must be valid regex!") };
-        public string NamingRegex
+        private PluginOptionText NamingRegexOption = new PluginOptionText
         {
-            get
-            {
-                return NamingRegexOption.Value;
-            }
-        }
+            Name = "naming-pattern",
+            Description = "Regex pattern for the beebyte naming scheme",
+            Value = "",
+            Required = true,
+            Validate = text => Helpers.IsValidRegex(text) ? true : throw new ArgumentException("Must be valid regex!")
+        };
+        public string NamingRegex => NamingRegexOption.Value;
+
         private PluginOptionChoice<DeobfuscatorType> FileTypeOption = new PluginOptionChoice<DeobfuscatorType>
         {
-            Name = "compiler",
+            Name = "backend",
             Description = "Select Unity Scripting backend",
             Required = true,
             Value = DeobfuscatorType.Il2Cpp,
@@ -46,29 +47,19 @@ namespace Beebyte_Deobfuscator
 
             Style = PluginOptionChoiceStyle.Dropdown
         };
-        public DeobfuscatorType FileType
-        {
-            get
-            {
-                return FileTypeOption.Value;
-            }
-        }
-        public PluginOptionFilePath MetadataPathOption = new PluginOptionFilePath
+        public DeobfuscatorType FileType => FileTypeOption.Value;
+
+        private PluginOptionFilePath MetadataPathOption = new PluginOptionFilePath
         {
             Name = "clean-metadata-path",
             Description = "Path to unobfuscated global-metadata.dat",
             MustExist = false,
             MustNotExist = false,
             IsFolder = false,
-            Required = false,
+            Required = false
         };
-        public string MetadataPath
-        {
-            get
-            {
-                return MetadataPathOption.Value;
-            }
-        }
+        public string MetadataPath => MetadataPathOption.Value;
+
         public PluginOptionFilePath BinaryPathOption = new PluginOptionFilePath
         {
             Name = "clean-binary-path",
@@ -81,19 +72,15 @@ namespace Beebyte_Deobfuscator
             {
                 ["dll"] = "DLL files",
                 ["apk"] = "APK",
-                ["apkx"] = "APKX",
+                ["xapk"] = "XAPK",
                 ["zip"] = "Zip Archive",
                 ["ipa"] = "IPA",
                 ["aab"] = "AAB",
+                ["*"] = "All files"
             }
         };
-        public string BinaryPath
-        {
-            get
-            {
-                return BinaryPathOption.Value;
-            }
-        }
+        public string BinaryPath => BinaryPathOption.Value;
+
         public PluginOptionFilePath MonoPathOption = new PluginOptionFilePath
         {
             Name = "clean-mono-path",
@@ -104,13 +91,8 @@ namespace Beebyte_Deobfuscator
             IsFolder = false,
             Validate = path => path.ToLower().EndsWith(".dll") ? true : throw new System.IO.FileNotFoundException($"You must supply a DLL file", path)
         };
-        public string MonoPath
-        {
-            get
-            {
-                return MonoPathOption.Value;
-            }
-        }
+        public string MonoPath => MonoPathOption.Value;
+
         public PluginOptionChoice<ExportType> ExportOption = new PluginOptionChoice<ExportType>
         {
             Name = "export",
@@ -127,13 +109,8 @@ namespace Beebyte_Deobfuscator
 
             Style = PluginOptionChoiceStyle.Dropdown
         };
-        public ExportType Export
-        {
-            get
-            {
-                return ExportOption.Value;
-            }
-        }
+        public ExportType Export => ExportOption.Value;
+
         public PluginOptionFilePath ExportPathOption = new PluginOptionFilePath
         {
             Name = "export-path",
@@ -143,21 +120,11 @@ namespace Beebyte_Deobfuscator
             MustNotExist = false,
             IsFolder = true,
         };
-        public string ExportPath
-        {
-            get
-            {
-                return ExportPathOption.Value;
-            }
-        }
+        public string ExportPath => ExportPathOption.Value;
+
         public PluginOptionText PluginNameOption = new PluginOptionText { Name = "plugin-name", Description = "The name of your plugin you want to generate the classes for", Value = "YourPlugin", Required = true };
-        public string PluginName
-        {
-            get
-            {
-                return PluginNameOption.Value;
-            }
-        }
+        public string PluginName => PluginNameOption.Value;
+
         public List<IPluginOption> Options => new List<IPluginOption> { NamingRegexOption, FileTypeOption, MetadataPathOption, BinaryPathOption, MonoPathOption, ExportOption, ExportPathOption, PluginNameOption };
 
         public CppCompilerType? CompilerType;
@@ -173,19 +140,22 @@ namespace Beebyte_Deobfuscator
 
         public void PostProcessImage<T>(FileFormatStream<T> stream, PluginPostProcessImageEventInfo data) where T : FileFormatStream<T>
         {
-            if (!CompilerType.HasValue) CompilerType = CppCompiler.GuessFromImage(stream);
+            if (!CompilerType.HasValue)
+            {
+                CompilerType = CppCompiler.GuessFromImage(stream);
+            }
         }
+
         public void PostProcessTypeModel(TypeModel model, PluginPostProcessTypeModelEventInfo info)
         {
             IDeobfuscator deobfuscator = Deobfuscator.Deobfuscator.GetDeobfuscator(FileType);
             LookupModel lookupModel = deobfuscator.Process(model, this);
-            if (lookupModel == null) throw new ArgumentException("Could not deobfuscate application");
 
-            if(lookupModel.Translations.Count == 0) throw new ArgumentException("Nothing was deobfuscated");
-            Task.Run(async () => await Translation.Export(this, lookupModel));
+            if (lookupModel != null)
+            {
+                Translation.Export(this, lookupModel);
+            }
             info.IsDataModified = true;
-
-            CompilerType = null;
         }
     }
 }
