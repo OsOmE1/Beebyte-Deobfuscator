@@ -96,6 +96,12 @@ namespace Beebyte_Deobfuscator
             return comparative_score;
         }
 
-        public static string SanitizeFileName(string name) => string.Join("_", name.Split(Path.GetInvalidPathChars()));
+        public static string SanitizeFileName(string name)
+        {
+            string invalidChars = Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
+            string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
+
+            return Regex.Replace(name, invalidRegStr, "_");
+        }
     }
 }

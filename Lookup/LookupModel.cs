@@ -131,6 +131,7 @@ namespace Beebyte_Deobfuscator.Lookup
             int current = 0;
             foreach (var type in filteredTypes)
             {
+                current++;
                 LookupType matchingType = GetMatchingType(type.Value, checkoffsets);
                 if (matchingType == null)
                 {
@@ -143,7 +144,6 @@ namespace Beebyte_Deobfuscator.Lookup
                 }
 
                 matchingType.Name = type.Key;
-                current++;
                 statusCallback?.Invoke(this, $"Deobfuscated {current}/{total} types");
             }
             TranslateFields(checkoffsets);

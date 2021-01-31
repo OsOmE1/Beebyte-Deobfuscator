@@ -61,39 +61,13 @@ namespace Beebyte_Deobfuscator.Output {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to             Translator.TranslateFields();
-        ///        }
-        ///        void TranslateMethods() { }
-        ///
-        ///        void TranslateDerivedTypes() { }
-        ///    }
-        ///}.
-        /// </summary>
-        internal static string ClassOutputBottom {
-            get {
-                return ResourceManager.GetString("ClassOutputBottom", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to //Generated C# file by https://github.com/OsOmE1/Beebyte-Deobfusctator
-        ///using Il2CppTranslator.Translator;
+        ///using Il2CppTranslator;
+        ///using System.Collections.Generic;
         ///
         ///namespace #PLUGINNAME#.Translators
         ///{
-        ///    class #CLASSNAME# : ITranslator
-        ///    {
-        ///        public string Name =&gt; &quot;#CLASSNAME#&quot;;
-        ///        public List&lt;System.Type&gt; Dependencies =&gt; new List&lt;System.Type&gt;();
-        ///        
-        ///        private TypeTranslator _type;
-        ///        
-        ///        public void Initialize()
-        ///        {
-        ///            //Write your own code here to locate the #CLASSNAME# class
-        ///#LOCATOR#
-        ///        }
-        /// [rest of string was truncated]&quot;;.
+        ///.
         /// </summary>
         internal static string ClassOutputTop {
             get {

@@ -17,7 +17,7 @@ namespace Beebyte_Deobfuscator.MonoDecompiler
 
         public LookupModule GetLookupModule(LookupModel lookupModel, EventHandler<string> statusCallback = null)
         {
-            List<LookupType> types = Module.GetTypes().ToLookupTypeList(lookupModel, statusCallback).ToList();
+            List<LookupType> types = Module.GetTypes().ToLookupTypeList(lookupModel, statusCallback: statusCallback).ToList();
             List<string> namespaces = types.Where(t => t != null).Select(t => t.Namespace).Distinct().ToList();
 
             return new LookupModule(namespaces, types);

@@ -1,7 +1,10 @@
 ﻿using Beebyte_Deobfuscator.Lookup;
+using Il2CppInspector.PluginAPI;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Beebyte_Deobfuscator.Output
 {
@@ -21,8 +24,8 @@ namespace Beebyte_Deobfuscator.Output
     public class Translation
     {
         private readonly TranslationType Type;
-        string ObfName;
-        string CleanName;
+        public string ObfName;
+        public string CleanName;
 
         public LookupField _field;
         private LookupType _type;
@@ -48,17 +51,11 @@ namespace Beebyte_Deobfuscator.Output
             return $"{ObfName}/{CleanName}";
         }
 
-        public string ToClassExport()
-        {
-            return Type switch
-            {
-                TranslationType.FieldTranslation => $"            _type.AddField(new FieldTranslator() {{ Offset = 0x{_field.Offset:X}, Static = {(_field.IsStatic ? "true" : "false")}, Name = \"{CleanName}\", TranslateName = true }});",
-                _ => "",
-            };
-        }
-
         public static void Export(BeebyteDeobfuscatorPlugin plugin, LookupModel lookupModel)
         {
+            PluginServices services = PluginServices.For(plugin);
+
+            services.StatusUpdate("Generating output..");
             if (!lookupModel.Translations.Any(t => t.CleanName != t.ObfName))
             {
                 return;
@@ -69,7 +66,7 @@ namespace Beebyte_Deobfuscator.Output
                     ExportPlainText(plugin.ExportPath, lookupModel);
                     break;
                 case ExportType.Classes:
-                    ExportClasses(plugin.ExportPath, plugin.PluginName, lookupModel);
+                    ExportClasses(plugin.ExportPath, plugin.PluginName, lookupModel, statusCallback: services.StatusUpdate);
                     break;
             }
         }
@@ -90,105 +87,73 @@ namespace Beebyte_Deobfuscator.Output
             output.Close();
         }
 
-        private static void ExportClasses(string ExportPath, string pluginName, LookupModel lookupModel)
+        private static void ExportClasses(string ExportPath, string pluginName, LookupModel lookupModel, EventHandler<string> statusCallback = null)
         {
-            foreach (Translation translation in lookupModel.Translations)
+            IEnumerable<Translation> translations = lookupModel.Translations.Where(t => 
+                !Regex.IsMatch(t.CleanName, @"\+<.*(?:>).*__[1-9]{ 0,4}|[A-z]*=.{1,4}|<.*>") &&
+                !Regex.IsMatch(t.CleanName, lookupModel.NamingRegex) &&
+                (t._type?.DeclaringType.IsEmpty ?? false) &&
+                !(t._type?.IsArray ?? false) &&
+                !(t._type?.IsGenericType ?? false) &&
+                !(t._type?.IsNested ?? false) &&
+                !(t._type?.Namespace.Contains("System") ?? false) &&
+                !(t._type?.Namespace.Contains("MS") ?? false)
+            );
+            int current = 0;
+            int total = translations.Count();
+            foreach (Translation translation in translations)
             {
-                if (translation._type == null)
+                if(translation.CleanName == "Palette")
                 {
-                    continue;
-                }
-                List<Translation> fieldTranslations = lookupModel.Translations.Where(t => t.Type.Equals(TranslationType.FieldTranslation) && t._field.DeclaringType.Name == translation._type.Name).ToList();
 
-                using var exportFile = new FileStream(ExportPath + Path.DirectorySeparatorChar + $"{Helpers.SanitizeFileName(translation.CleanName)}.cs", FileMode.Create);
+                }
+                statusCallback?.Invoke(translations, $"Exported {current}/{total} classes");
+
+                FileStream exportFile = null;
+                if (!translation.CleanName.Contains("+"))
+                {
+                    exportFile = new FileStream(ExportPath +
+                        Path.DirectorySeparatorChar +
+                        $"{Helpers.SanitizeFileName(translation.CleanName)}.cs",
+                        FileMode.Create);
+                }
+                else
+                {
+                    if(!File.Exists($"{Helpers.SanitizeFileName(translation.CleanName.Split("+")[0])}.cs"))
+                    {
+                        continue;
+                    }
+                    var lines = File.ReadAllLines($"{Helpers.SanitizeFileName(translation.CleanName.Split("+")[0])}.cs");
+                    File.WriteAllLines($"{Helpers.SanitizeFileName(translation.CleanName.Split("+")[0])}.cs", lines.Take(lines.Length - 1).ToArray());
+                    exportFile = new FileStream(ExportPath +
+                        Path.DirectorySeparatorChar +
+                        $"{Helpers.SanitizeFileName(translation.CleanName.Split("+")[0])}.cs",
+                        FileMode.Open);
+                }
+
                 StreamWriter output = new StreamWriter(exportFile);
 
-                string start = Output.ClassOutputTop;
-                start = start.Replace("#CLASSNAME#", translation.CleanName);
-                start = start.Replace("#PLUGINNAME#", pluginName);
-                start = start.Replace("#LOCATOR#", translation.GenerateLocater(lookupModel));
-                output.Write(start);
-
-                foreach (Translation t in fieldTranslations)
+                if (!translation.CleanName.Contains("+"))
                 {
-                    output.WriteLine(t.ToClassExport());
+                    string start = Output.ClassOutputTop;
+                    start = start.Replace("#PLUGINNAME#", pluginName);
+                    output.Write(start);
+                    output.Write($"    [Translator]\n    public struct {translation.CleanName}\n    {{\n");
                 }
-
-                string end = Output.ClassOutputBottom;
-                output.Write(end);
+                else
+                {
+                    var names = translation.CleanName.Split("+").ToList();
+                    names.RemoveAt(0);
+                    output.Write($"    [Translator]\n    public struct {string.Join('.', names)}\n    {{\n");
+                }
+                foreach (LookupField f in translation._type.Fields)
+                {
+                    output.WriteLine(f.ToFieldExport());
+                }
+                output.Write("    }\n}");
 
                 output.Close();
-            }
-        }
-
-        private string GenerateLocater(LookupModel lookupModel)
-        {
-            if (_type == null)
-            {
-                return null;
-            }
-            if (_type.Fields.Count(f => !f.IsStatic && !f.IsLiteral) == 0 && _type.Fields.Count(f => f.IsStatic && !f.IsLiteral) == 0)
-            {
-                return "            return null;";
-            }
-
-            List<string> fieldSequence = new List<string>();
-            List<string> staticFieldSequence = new List<string>();
-
-            if (_type.Fields.Count(f => !f.IsStatic && !f.IsLiteral) != 0)
-            {
-                foreach (LookupField field in _type.Fields.Where(f => !f.IsStatic && !f.IsLiteral))
-                {
-                    if (field.Type.Namespace == "UnityEngine" || field.Type.Namespace == "System")
-                    {
-                        fieldSequence.Add(field.Type.Name);
-                    }
-                    else
-                    {
-                        fieldSequence.Add("*");
-                    }
-                }
-            }
-
-            if (_type.Fields.Count(f => f.IsStatic && !f.IsLiteral) != 0)
-            {
-                foreach (LookupField field in _type.Fields.Where(f => f.IsStatic && !f.IsLiteral))
-                {
-                    if (field.Type.Namespace == "UnityEngine" || field.Type.Namespace == "System")
-                    {
-                        staticFieldSequence.Add(field.Type.Name);
-                    }
-                    else
-                    {
-                        staticFieldSequence.Add("*");
-                    }
-                }
-            }
-
-            int fieldSequenceMatchCount = lookupModel.ObfTypes.Count(t => t.Value.FieldSequenceEqual(fieldSequence));
-            int staticFieldSequenceMatchCount = lookupModel.ObfTypes.Count(t => t.Value.StaticFieldSequenceEqual(staticFieldSequence));
-
-            if (fieldSequenceMatchCount > 1 && staticFieldSequenceMatchCount > 1)
-            {
-                return "            return null;";
-            }
-
-
-            if (fieldSequenceMatchCount == 1)
-            {
-                string locator = "            _type = new TypeTranslator(Helpers.FindTypeWithFieldSequence(new List<string>() { ";
-                fieldSequence.ForEach((s) => locator += $"\"{s}\", ");
-                locator = locator.Remove(locator.Length - 2);
-                locator += " }));";
-                return locator;
-            }
-            else
-            {
-                string locator = "            _type = new TypeTranslator(Helpers.FindTypeWithStaticFieldSequence(new List<string>() { ";
-                staticFieldSequence.ForEach((s) => locator += $"\"{s}\", ");
-                locator = locator.Remove(locator.Length - 2);
-                locator += " }));";
-                return locator;
+                current++;
             }
         }
     }

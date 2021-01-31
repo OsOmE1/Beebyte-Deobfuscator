@@ -117,36 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ClassOutputBottom" xml:space="preserve">
-    <value>            Translator.TranslateFields();
-        }
-        void TranslateMethods() { }
-
-        void TranslateDerivedTypes() { }
-    }
-}</value>
-  </data>
   <data name="ClassOutputTop" xml:space="preserve">
     <value>//Generated C# file by https://github.com/OsOmE1/Beebyte-Deobfusctator
-using Il2CppTranslator.Translator;
+using Il2CppTranslator;
+using System.Collections.Generic;
 
 namespace #PLUGINNAME#.Translators
 {
-    class #CLASSNAME# : ITranslator
-    {
-        public string Name =&gt; "#CLASSNAME#";
-        public List&lt;System.Type&gt; Dependencies =&gt; new List&lt;System.Type&gt;();
-        
-        private TypeTranslator _type;
-        
-        public void Initialize()
-        {
-            //Write your own code here to locate the #CLASSNAME# class
-#LOCATOR#
-        }
-
-        public void Translate()
-        {
 </value>
   </data>
 </root>

@@ -17,7 +17,7 @@ namespace Beebyte_Deobfuscator
                 t.BaseType?.Namespace != "System" &&
                 !t.Namespace.Contains("UnityEngine")
                 )
-                .ToLookupTypeList(lookupModel, statusCallback).ToList());
+                .ToLookupTypeList(lookupModel, statusCallback: statusCallback).ToList());
         }
 
         public static LookupType ToLookupType(this TypeInfo type, LookupModel lookupModel, bool recurse)
@@ -26,6 +26,7 @@ namespace Beebyte_Deobfuscator
             {
                 return new LookupType(lookupModel);
             }
+
             if (!lookupModel.ProcessedIl2CppTypes.Contains(type))
             {
                 lookupModel.ProcessedIl2CppTypes.Add(type);
@@ -33,7 +34,16 @@ namespace Beebyte_Deobfuscator
                 lookupModel.Il2CppTypeMatches.Add(type, t);
             }
 
-            if (!recurse)
+            if (lookupModel.Il2CppTypeMatches[type].IsGenericType)
+            {
+                lookupModel.Il2CppTypeMatches[type].GenericTypeParameters = lookupModel.Il2CppTypeMatches[type].Il2CppType.GenericTypeArguments.ToLookupTypeList(lookupModel, false).ToList();
+            }
+            if (lookupModel.Il2CppTypeMatches[type].IsArray)
+            {
+                lookupModel.Il2CppTypeMatches[type].ElementType = lookupModel.Il2CppTypeMatches[type].Il2CppType.ElementType.ToLookupType(lookupModel, false);
+            }
+            
+            if (!recurse || lookupModel.Il2CppTypeMatches[type].Fields != null)
             {
                 return lookupModel.Il2CppTypeMatches[type];
             }
@@ -62,6 +72,14 @@ namespace Beebyte_Deobfuscator
                 LookupType t = new LookupType(lookupModel) { MonoType = type, Children = new List<LookupType>() };
                 lookupModel.MonoTypeMatches.Add(type, t);
             }
+            if (lookupModel.MonoTypeMatches[type].IsGenericType)
+            {
+                lookupModel.MonoTypeMatches[type].GenericTypeParameters = lookupModel.MonoTypeMatches[type].MonoType.GenericParameters.Select(p => p.DeclaringType).ToLookupTypeList(lookupModel, false).ToList();
+            }
+            if (lookupModel.MonoTypeMatches[type].IsArray)
+            {
+                lookupModel.MonoTypeMatches[type].ElementType = lookupModel.MonoTypeMatches[type].MonoType.TryGetArraySig()?.TryGetTypeDef()?.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel);
+            }
 
             if (!recurse)
             {
@@ -80,7 +98,7 @@ namespace Beebyte_Deobfuscator
             return lookupModel.MonoTypeMatches[type];
         }
 
-        public static IEnumerable<LookupType> ToLookupTypeList(this IEnumerable<TypeDef> monoTypes, LookupModel lookupModel, EventHandler<string> statusCallback = null)
+        public static IEnumerable<LookupType> ToLookupTypeList(this IEnumerable<TypeDef> monoTypes, LookupModel lookupModel, bool recurse = true, EventHandler<string> statusCallback = null)
         {
             int current = 0;
             int total = monoTypes.Count(t => !t.IsNested);
@@ -89,13 +107,13 @@ namespace Beebyte_Deobfuscator
                 if (!type.IsNested)
                 {
                     current++;
-                    statusCallback?.Invoke(null, $"Loaded {current}/{total} types");
-                    yield return type.ToLookupType(lookupModel, true);
+                    statusCallback?.Invoke(null, $"Loaded {current}/{total} types...");
+                    yield return type.ToLookupType(lookupModel, recurse);
                 }
             }
         }
 
-        public static IEnumerable<LookupType> ToLookupTypeList(this IEnumerable<TypeInfo> il2cppTypes, LookupModel lookupModel, EventHandler<string> statusCallback = null)
+        public static IEnumerable<LookupType> ToLookupTypeList(this IEnumerable<TypeInfo> il2cppTypes, LookupModel lookupModel, bool recurse = true, EventHandler<string> statusCallback = null)
         {
             int current = 0;
             int total = il2cppTypes.Count(t => !t.IsNested);
@@ -104,8 +122,8 @@ namespace Beebyte_Deobfuscator
                 if (!type.IsNested)
                 {
                     current++;
-                    statusCallback?.Invoke(null, $"Loaded {current}/{total} types");
-                    yield return type.ToLookupType(lookupModel, true);
+                    statusCallback?.Invoke(null, $"Loaded {current}/{total} types...");
+                    yield return type.ToLookupType(lookupModel, recurse);
                 }
             }
         }
@@ -135,7 +153,7 @@ namespace Beebyte_Deobfuscator
             return new LookupField(lookupModel)
             {
                 MonoField = field,
-                Type = field.FieldType.TryGetTypeDef().ToLookupType(lookupModel, false),
+                Type = field.FieldType.TryGetTypeDef()?.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel),
                 DeclaringType = field.DeclaringType.ToLookupType(lookupModel, false)
             };
         }
@@ -161,7 +179,7 @@ namespace Beebyte_Deobfuscator
 
             return new LookupProperty(lookupModel)
             {
-                PropertyType = property.PropertySig.RetType.TryGetTypeDef().ToLookupType(lookupModel, false),
+                PropertyType = property.PropertySig.RetType.TryGetTypeDef()?.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel),
                 GetMethod = property.GetMethod.ToLookupMethod(lookupModel),
                 SetMethod = property.SetMethod.ToLookupMethod(lookupModel),
                 Index = index
@@ -212,14 +230,14 @@ namespace Beebyte_Deobfuscator
             {
                 if (param.Type.IsTypeDefOrRef)
                 {
-                    ParameterList.Add(param.Type.TryGetTypeDef().ToLookupType(lookupModel, false));
+                    ParameterList.Add(param.Type.TryGetTypeDef()?.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel));
                 }
             }
 
             return new LookupMethod(lookupModel)
             {
                 DeclaringType = method.DeclaringType.ToLookupType(lookupModel, false),
-                ReturnType = method.ReturnType.TryGetTypeDef().ToLookupType(lookupModel, false),
+                ReturnType = method.ReturnType.TryGetTypeDef()?.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel),
                 ParameterList = ParameterList
             };
         }
