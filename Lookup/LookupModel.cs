@@ -11,6 +11,8 @@ namespace Beebyte_Deobfuscator.Lookup
     public class LookupModel
     {
         public List<Translation> Translations { get; } = new List<Translation>();
+        public LookupModule ObfModule { get; private set; }
+        public LookupModule CleanModule { get; private set; }
 
         private LookupMatrix Matrix = new LookupMatrix();
         private Dictionary<LookupType, LookupType> Matches = new Dictionary<LookupType, LookupType>();
@@ -31,6 +33,9 @@ namespace Beebyte_Deobfuscator.Lookup
 
         public void Init(LookupModule obfModule, LookupModule cleanModule, EventHandler<string> statusCallback = null)
         {
+            ObfModule = obfModule;
+            CleanModule = cleanModule;
+
             statusCallback?.Invoke(this, "Sorting obfuscated and un-obfsucated types");
             foreach (LookupType type in cleanModule.Types)
             {

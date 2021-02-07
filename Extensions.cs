@@ -17,7 +17,7 @@ namespace Beebyte_Deobfuscator
                 t.BaseType?.Namespace != "System" &&
                 !t.Namespace.Contains("UnityEngine")
                 )
-                .ToLookupTypeList(lookupModel, statusCallback: statusCallback).ToList());
+                .ToLookupTypeList(lookupModel, statusCallback: statusCallback).ToList(), model);
         }
 
         public static LookupType ToLookupType(this TypeInfo type, LookupModel lookupModel, bool recurse)
@@ -57,6 +57,7 @@ namespace Beebyte_Deobfuscator
             {
                 lookupModel.Il2CppTypeMatches[type].DeclaringType.Children.Add(lookupModel.Il2CppTypeMatches[type]);
             }
+            lookupModel.Il2CppTypeMatches[type].Resolved = true;
             return lookupModel.Il2CppTypeMatches[type];
         }
 
@@ -66,7 +67,7 @@ namespace Beebyte_Deobfuscator
             {
                 return new LookupType(lookupModel);
             }
-            if (lookupModel.ProcessedMonoTypes.Contains(type))
+            if (!lookupModel.ProcessedMonoTypes.Contains(type))
             {
                 lookupModel.ProcessedMonoTypes.Add(type);
                 LookupType t = new LookupType(lookupModel) { MonoType = type, Children = new List<LookupType>() };
@@ -95,6 +96,7 @@ namespace Beebyte_Deobfuscator
             {
                 lookupModel.MonoTypeMatches[type].DeclaringType.Children.Add(lookupModel.MonoTypeMatches[type]);
             }
+            lookupModel.MonoTypeMatches[type].Resolved = true;
             return lookupModel.MonoTypeMatches[type];
         }
 
