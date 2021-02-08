@@ -90,7 +90,7 @@ namespace Beebyte_Deobfuscator
                 }
             }
 
-            if (!recurse)
+            if (!recurse || lookupModel.MonoTypeMatches[type].Fields != null)
             {
                 return lookupModel.MonoTypeMatches[type];
             }
