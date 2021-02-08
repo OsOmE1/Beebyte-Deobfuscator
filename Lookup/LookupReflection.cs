@@ -375,6 +375,11 @@ namespace Beebyte_Deobfuscator.Lookup
 
         public ulong GetAdress(AppModel model)
         {
+            if(model == null)
+            {
+                return 0x0;
+            }
+
             AddressMap map = model.GetAddressMap();
             ulong adress = map.Where(k => k.Value is AppMethod).FirstOrDefault(m => ((AppMethod)m.Value).Method == ((MethodBase)Il2CppMethod)).Key;
             return adress;

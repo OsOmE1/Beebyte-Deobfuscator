@@ -36,11 +36,15 @@ namespace Beebyte_Deobfuscator
 
             if (lookupModel.Il2CppTypeMatches[type].IsGenericType)
             {
-                lookupModel.Il2CppTypeMatches[type].GenericTypeParameters = lookupModel.Il2CppTypeMatches[type].Il2CppType.GenericTypeArguments.ToLookupTypeList(lookupModel, false).ToList();
+                lookupModel.Il2CppTypeMatches[type].GenericTypeParameters = lookupModel.Il2CppTypeMatches[type].Il2CppType.GenericTypeArguments.Where(t => t != type).ToLookupTypeList(lookupModel, false).ToList();
             }
             if (lookupModel.Il2CppTypeMatches[type].IsArray)
             {
-                lookupModel.Il2CppTypeMatches[type].ElementType = lookupModel.Il2CppTypeMatches[type].Il2CppType.ElementType.ToLookupType(lookupModel, false);
+                TypeInfo elementType = lookupModel.Il2CppTypeMatches[type].Il2CppType.ElementType;
+                if (elementType != null && elementType != type)
+                {
+                    lookupModel.Il2CppTypeMatches[type].ElementType = elementType.ToLookupType(lookupModel, false);
+                }
             }
             
             if (!recurse || lookupModel.Il2CppTypeMatches[type].Fields != null)
@@ -75,11 +79,15 @@ namespace Beebyte_Deobfuscator
             }
             if (lookupModel.MonoTypeMatches[type].IsGenericType)
             {
-                lookupModel.MonoTypeMatches[type].GenericTypeParameters = lookupModel.MonoTypeMatches[type].MonoType.GenericParameters.Select(p => p.DeclaringType).ToLookupTypeList(lookupModel, false).ToList();
+                lookupModel.MonoTypeMatches[type].GenericTypeParameters = lookupModel.MonoTypeMatches[type].MonoType.GenericParameters.Select(p => p.DeclaringType).Where(t => t != type).ToLookupTypeList(lookupModel, false).ToList();
             }
             if (lookupModel.MonoTypeMatches[type].IsArray)
             {
-                lookupModel.MonoTypeMatches[type].ElementType = lookupModel.MonoTypeMatches[type].MonoType.TryGetArraySig()?.TryGetTypeDef()?.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel);
+                TypeDef elementType = lookupModel.MonoTypeMatches[type].MonoType.TryGetArraySig()?.TryGetTypeDef();
+                if(elementType != null && elementType != type)
+                {
+                    lookupModel.MonoTypeMatches[type].ElementType = elementType.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel);
+                }
             }
 
             if (!recurse)
@@ -151,11 +159,12 @@ namespace Beebyte_Deobfuscator
             {
                 return new LookupField(lookupModel);
             }
+            TypeDef type = field.FieldType.ToTypeDef();
 
             return new LookupField(lookupModel)
             {
                 MonoField = field,
-                Type = field.FieldType.TryGetTypeDef()?.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel),
+                Type = type.ToLookupType(lookupModel, false),
                 DeclaringType = field.DeclaringType.ToLookupType(lookupModel, false)
             };
         }
@@ -240,7 +249,8 @@ namespace Beebyte_Deobfuscator
             {
                 DeclaringType = method.DeclaringType.ToLookupType(lookupModel, false),
                 ReturnType = method.ReturnType.TryGetTypeDef()?.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel),
-                ParameterList = ParameterList
+                ParameterList = ParameterList,
+                MonoMethod = method
             };
         }
 
@@ -273,6 +283,28 @@ namespace Beebyte_Deobfuscator
         {
             foreach (MethodInfo method in il2cppMethods)
                 yield return method.ToLookupMethod(lookupModel);
+        }
+
+        public static TypeDef ToTypeDef(this TypeSig type)
+        {
+            TypeDef typeDef = type.ToTypeDefOrRef().ResolveTypeDef();
+            if (typeDef != null)
+            {
+                return typeDef;
+            }
+            if(type.IsArray)
+            {
+                typeDef = type.Next.ToTypeDefOrRef().ResolveTypeDef();
+            }
+            if (typeDef != null)
+            {
+                return typeDef;
+            }
+            if(type.IsGenericInstanceType)
+            {
+                typeDef = type.ToGenericInstSig().ToTypeDefOrRef().ResolveTypeDef();
+            }
+            return typeDef;
         }
     }
 }
