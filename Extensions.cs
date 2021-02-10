@@ -17,7 +17,7 @@ namespace Beebyte_Deobfuscator
                 t.BaseType?.Namespace != "System" &&
                 !t.Namespace.Contains("UnityEngine")
                 )
-                .ToLookupTypeList(lookupModel, statusCallback: statusCallback).ToList(), model);
+                .ToLookupTypeList(lookupModel, statusCallback: statusCallback).ToList(), model, statusCallback);
         }
 
         public static LookupType ToLookupType(this TypeInfo type, LookupModel lookupModel, bool recurse)
@@ -193,7 +193,8 @@ namespace Beebyte_Deobfuscator
                 PropertyType = property.PropertySig.RetType.TryGetTypeDef()?.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel),
                 GetMethod = property.GetMethod.ToLookupMethod(lookupModel),
                 SetMethod = property.SetMethod.ToLookupMethod(lookupModel),
-                Index = index
+                Index = index,
+                MonoProperty = property
             };
         }
 
@@ -209,7 +210,8 @@ namespace Beebyte_Deobfuscator
                 PropertyType = property.PropertyType.ToLookupType(lookupModel, false),
                 GetMethod = property.GetMethod.ToLookupMethod(lookupModel),
                 SetMethod = property.SetMethod.ToLookupMethod(lookupModel),
-                Index = property.Index
+                Index = property.Index,
+                Il2CppProperty = property
             };
         }
 

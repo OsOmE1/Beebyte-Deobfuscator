@@ -2,6 +2,7 @@
 using dnlib.DotNet;
 using Il2CppInspector.Model;
 using Il2CppInspector.Reflection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -11,23 +12,24 @@ namespace Beebyte_Deobfuscator.Lookup
     public class LookupModule
     {
         public List<string> Namespaces;
-        public readonly List<LookupType> Types;
-        public readonly TypeModel TypeModel;
-        public readonly AppModel AppModel;
-        public LookupModule(List<string> namespaces, List<LookupType> types, TypeModel model = null)
+        public List<LookupType> Types;
+        public TypeModel TypeModel;
+        public AppModel AppModel;
+        public LookupModule(List<string> namespaces, List<LookupType> types, TypeModel model = null, EventHandler<string> statusCallback = null)
         {
             Namespaces = namespaces;
             Types = types;
             if(model != null)
             {
                 TypeModel = model;
+                statusCallback?.Invoke(this, "Creating app model");
                 AppModel = new AppModel(model);
             }
         }
     }
     public class LookupType
     {
-        private readonly LookupModel Parent;
+        public readonly LookupModel Owner;
         public TypeInfo Il2CppType { get; set; }
         public TypeDef MonoType { get; set; }
 
@@ -57,7 +59,7 @@ namespace Beebyte_Deobfuscator.Lookup
         public LookupType ElementType { get; set; }
         public bool IsEmpty => Il2CppType == null && MonoType == null;
         public bool IsNested => Il2CppType?.IsNested ?? MonoType?.IsNested ?? false;
-        public bool ShouldTranslate => Regex.Match(Name, Parent.NamingRegex).Success || Fields.Any(f => Regex.Match(f.Name, Parent.NamingRegex).Success) || Fields.Any(f => f.Translated);
+        public bool ShouldTranslate => Regex.Match(Name, Owner.NamingRegex).Success || Fields.Any(f => Regex.Match(f.Name, Owner.NamingRegex).Success) || Fields.Any(f => f.Translated);
         public bool Translated { get; private set; }
         public Translation Translation { get; set; }
         public LookupType DeclaringType { get; set; }
@@ -66,13 +68,13 @@ namespace Beebyte_Deobfuscator.Lookup
         public List<LookupMethod> Methods { get; set; }
         public List<LookupType> Children { get; set; }
         public bool Resolved { get; set; }
-        public LookupType(LookupModel lookupModel) { Parent = lookupModel; }
+        public LookupType(LookupModel lookupModel) { Owner = lookupModel; }
         public void SetName(string name)
         {
-            if (!Regex.Match(Name, Parent.NamingRegex).Success && Fields.Any(f => Regex.Match(f.Name, Parent.NamingRegex).Success))
+            if (!Regex.Match(Name, Owner.NamingRegex).Success && Fields.Any(f => Regex.Match(f.Name, Owner.NamingRegex).Success))
             {
                 Translation = new Translation(Name, this);
-                Parent.Translations.Add(Translation);
+                Owner.Translations.Add(Translation);
                 return;
             }
 
@@ -85,7 +87,7 @@ namespace Beebyte_Deobfuscator.Lookup
 
             Il2CppType.Name = name;
             Translation = new Translation(obfName, this);
-            Parent.Translations.Add(Translation);
+            Owner.Translations.Add(Translation);
             Translated = true;
         }
         public bool FieldSequenceEqual(IEnumerable<string> baseNames)
@@ -142,10 +144,10 @@ namespace Beebyte_Deobfuscator.Lookup
             {
                 return;
             }
-            Fields = Il2CppType?.DeclaredFields.ToLookupFieldList(Parent).ToList() ?? MonoType?.Fields.ToLookupFieldList(Parent).ToList();
-            DeclaringType = Il2CppType?.DeclaringType.ToLookupType(Parent, false) ?? MonoType?.DeclaringType.ToLookupType(Parent, false);
-            Properties = Il2CppType?.DeclaredProperties.ToLookupPropertyList(Parent).ToList() ?? MonoType?.Properties.ToLookupPropertyList(Parent).ToList();
-            Methods = Il2CppType?.DeclaredMethods.ToLookupMethodList(Parent).ToList() ?? MonoType?.Methods.ToLookupMethodList(Parent).ToList();
+            Fields = Il2CppType?.DeclaredFields.ToLookupFieldList(Owner).ToList() ?? MonoType?.Fields.ToLookupFieldList(Owner).ToList();
+            DeclaringType = Il2CppType?.DeclaringType.ToLookupType(Owner, false) ?? MonoType?.DeclaringType.ToLookupType(Owner, false);
+            Properties = Il2CppType?.DeclaredProperties.ToLookupPropertyList(Owner).ToList() ?? MonoType?.Properties.ToLookupPropertyList(Owner).ToList();
+            Methods = Il2CppType?.DeclaredMethods.ToLookupMethodList(Owner).ToList() ?? MonoType?.Methods.ToLookupMethodList(Owner).ToList();
 
             if (!DeclaringType.IsEmpty)
             {
@@ -153,9 +155,9 @@ namespace Beebyte_Deobfuscator.Lookup
             }
         }
 
-        public string GetExportTypeName()
+        public string GetExportTypeName(bool checktranslations = true)
         {
-            if(IsPrimitive)
+            if (IsPrimitive)
             {
                 return CSharpName;
             }
@@ -163,7 +165,7 @@ namespace Beebyte_Deobfuscator.Lookup
             string typename = "";
             if (!IsEmpty)
             {
-                if (Parent.Translations.Any(t => t.CleanName == Name))
+                if (Owner.Translations.Any(t => t.CleanName == Name) || !checktranslations)
                 {
                     typename = CSharpName;
                 }
@@ -176,12 +178,30 @@ namespace Beebyte_Deobfuscator.Lookup
         }
         public override string ToString()
         {
-            return CSharpName;
+            string typename = "";
+            if (IsArray)
+            {
+                typename = $"{ElementType?.GetExportTypeName(false) ?? "object"}[]";
+            }
+            else if (IsGenericType && GenericTypeParameters.Any())
+            {
+                typename = Name.Split("`")[0] + "<";
+                foreach (LookupType t in GenericTypeParameters)
+                {
+                    typename += t.GetExportTypeName(false) + (GenericTypeParameters[GenericTypeParameters.Count() - 1] != t ? ", " : "");
+                }
+                typename += ">";
+            }
+            else
+            {
+                typename = CSharpName;
+            }
+            return typename;
         }
     }
     public class LookupField
     {
-        private readonly LookupModel Parent;
+        public readonly LookupModel Owner;
         public FieldInfo Il2CppField { get; set; }
         public FieldDef MonoField { get; set; }
         public string Name
@@ -213,20 +233,20 @@ namespace Beebyte_Deobfuscator.Lookup
         public Translation Translation { get; set; }
         public LookupType Type { get; set; }
         public LookupType DeclaringType { get; set; }
-        public LookupField(LookupModel lookupModel) { Parent = lookupModel; }
+        public LookupField(LookupModel lookupModel) { Owner = lookupModel; }
 
         public void SetName(string name)
         {
             string obfName = Name;
 
-            if (!Regex.Match(obfName, Parent.NamingRegex).Success)
+            if (!Regex.Match(obfName, Owner.NamingRegex).Success)
             {
                 return;
             }
 
             Il2CppField.Name = name;
             Translation = new Translation(obfName, this);
-            Parent.Translations.Add(Translation);
+            Owner.Translations.Add(Translation);
             Translated = true;
         }
         public string ToFieldExport()
@@ -260,7 +280,7 @@ namespace Beebyte_Deobfuscator.Lookup
 
     public class LookupProperty
     {
-        private readonly LookupModel Parent;
+        public readonly LookupModel Owner;
         public PropertyInfo Il2CppProperty { get; set; }
         public PropertyDef MonoProperty { get; set; }
         public string Name
@@ -288,13 +308,13 @@ namespace Beebyte_Deobfuscator.Lookup
         public int Index { get; set; }
         public bool Translated { get; private set; } = false;
         public bool IsEmpty => Il2CppProperty == null && MonoProperty == null;
-        public LookupProperty(LookupModel lookupModel) { Parent = lookupModel; }
+        public LookupProperty(LookupModel lookupModel) { Owner = lookupModel; }
 
         public void SetName(string name)
         {
             string obfName = Name;
 
-            if (!Regex.Match(obfName, Parent.NamingRegex).Success)
+            if (!Regex.Match(obfName, Owner.NamingRegex).Success)
             {
                 return;
             }
@@ -311,7 +331,7 @@ namespace Beebyte_Deobfuscator.Lookup
 
     public class LookupMethod
     {
-        private readonly LookupModel Parent;
+        public readonly LookupModel Owner;
         public MethodInfo Il2CppMethod { get; set; }
         public MethodDef MonoMethod { get; set; }
 
@@ -358,13 +378,13 @@ namespace Beebyte_Deobfuscator.Lookup
                 return false;
             }
         }
-        public LookupMethod(LookupModel lookupModel) { Parent = lookupModel; }
+        public LookupMethod(LookupModel lookupModel) { Owner = lookupModel; }
 
         public void SetName(string name)
         {
             string obfName = Name;
 
-            if (!Regex.Match(obfName, Parent.NamingRegex).Success)
+            if (!Regex.Match(obfName, Owner.NamingRegex).Success)
             {
                 return;
             }
@@ -373,7 +393,7 @@ namespace Beebyte_Deobfuscator.Lookup
             Translated = true;
         }
 
-        public ulong GetAdress(AppModel model)
+        public ulong GetAddress(AppModel model)
         {
             if(model == null)
             {
