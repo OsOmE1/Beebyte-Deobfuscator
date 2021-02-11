@@ -149,7 +149,7 @@ namespace Beebyte_Deobfuscator
         public void PostProcessTypeModel(TypeModel model, PluginPostProcessTypeModelEventInfo info)
         {
             IDeobfuscator deobfuscator = Deobfuscator.Deobfuscator.GetDeobfuscator(FileType);
-            LookupModel lookupModel = deobfuscator.Process(model, this);
+            LookupModule lookupModel = deobfuscator.Process(model, this);
 
             if (lookupModel != null)
             {

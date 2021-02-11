@@ -5,7 +5,7 @@ namespace Beebyte_Deobfuscator.Deobfuscator
 {
     public interface IDeobfuscator
     {
-        public LookupModel Process(TypeModel obfModel, BeebyteDeobfuscatorPlugin plugin);
+        public LookupModule Process(TypeModel obfModel, BeebyteDeobfuscatorPlugin plugin);
     }
 
     public enum DeobfuscatorType

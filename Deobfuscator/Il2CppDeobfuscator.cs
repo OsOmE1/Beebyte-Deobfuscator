@@ -7,7 +7,7 @@ namespace Beebyte_Deobfuscator.Deobfuscator
 {
     public class Il2CppDeobfuscator : IDeobfuscator
     {
-        public LookupModel Process(TypeModel model, BeebyteDeobfuscatorPlugin plugin)
+        public LookupModule Process(TypeModel model, BeebyteDeobfuscatorPlugin plugin)
         {
             if (!plugin.CompilerType.HasValue)
             {
@@ -40,8 +40,8 @@ namespace Beebyte_Deobfuscator.Deobfuscator
             }
 
             services.StatusUpdate("Creating LookupModel for obfuscated application");
-            LookupModel lookupModel = new LookupModel(plugin.NamingRegex);
-            lookupModel.Init(model.ToLookupModule(lookupModel, statusCallback: services.StatusUpdate), modelClean.ToLookupModule(lookupModel, statusCallback: services.StatusUpdate));
+            LookupModule lookupModel = new LookupModule(plugin.NamingRegex);
+            lookupModel.Init(model.ToLookupModel(statusCallback: services.StatusUpdate), modelClean.ToLookupModel(statusCallback: services.StatusUpdate));
             services.StatusUpdate("Deobfuscating binary");
             lookupModel.TranslateTypes(true, statusCallback: services.StatusUpdate);
 

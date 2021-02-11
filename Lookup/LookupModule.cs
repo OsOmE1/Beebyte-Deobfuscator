@@ -8,11 +8,11 @@ using System.Text.RegularExpressions;
 
 namespace Beebyte_Deobfuscator.Lookup
 {
-    public class LookupModel
+    public class LookupModule
     {
         public List<Translation> Translations { get; } = new List<Translation>();
-        public LookupModule ObfModule { get; private set; }
-        public LookupModule CleanModule { get; private set; }
+        public LookupModel ObfModule { get; private set; }
+        public LookupModel CleanModule { get; private set; }
 
         private LookupMatrix Matrix = new LookupMatrix();
         private Dictionary<LookupType, LookupType> Matches = new Dictionary<LookupType, LookupType>();
@@ -22,16 +22,11 @@ namespace Beebyte_Deobfuscator.Lookup
         public List<string> ObfTypeNames { get; } = new List<string>();
         public SortedDictionary<string, LookupType> ObfTypes { get; } = new SortedDictionary<string, LookupType>();
 
-        public List<TypeDef> ProcessedMonoTypes { get; } = new List<TypeDef>();
-        public List<TypeInfo> ProcessedIl2CppTypes { get; } = new List<TypeInfo>();
-        public Dictionary<TypeDef, LookupType> MonoTypeMatches { get; } = new Dictionary<TypeDef, LookupType>();
-        public Dictionary<TypeInfo, LookupType> Il2CppTypeMatches { get; } = new Dictionary<TypeInfo, LookupType>();
-
         public string NamingRegex;
 
-        public LookupModel(string namingRegex) => NamingRegex = namingRegex;
+        public LookupModule(string namingRegex) => NamingRegex = namingRegex;
 
-        public void Init(LookupModule obfModule, LookupModule cleanModule, EventHandler<string> statusCallback = null)
+        public void Init(LookupModel obfModule, LookupModel cleanModule, EventHandler<string> statusCallback = null)
         {
             ObfModule = obfModule;
             CleanModule = cleanModule;
@@ -64,8 +59,8 @@ namespace Beebyte_Deobfuscator.Lookup
             ObfTypeNames.AddRange(obfModule.Types.Where(x => !x.IsEmpty).Select(x => x.Name));
 
             int current = 0;
-            int total = ObfTypes.Count(t => t.Value.ShouldTranslate && t.Value.DeclaringType.IsEmpty);
-            foreach (var type in ObfTypes.Where(t => t.Value.ShouldTranslate && t.Value.DeclaringType.IsEmpty))
+            int total = ObfTypes.Count(t => t.Value.ShouldTranslate(this) && t.Value.DeclaringType.IsEmpty);
+            foreach (var type in ObfTypes.Where(t => t.Value.ShouldTranslate(this) && t.Value.DeclaringType.IsEmpty))
             {
                 statusCallback?.Invoke(this, $"Created {current}/{total} Lookup Matrices");
                 Matrix.Insert(type.Value);
@@ -148,7 +143,7 @@ namespace Beebyte_Deobfuscator.Lookup
                     LookupTranslators.TranslateChildren(matchingType, type.Value, checkoffsets, this);
                 }
 
-                matchingType.Name = type.Key;
+                matchingType.SetName(type.Key, this);
                 statusCallback?.Invoke(this, $"Deobfuscated {current}/{total} types");
             }
             TranslateFields(checkoffsets);

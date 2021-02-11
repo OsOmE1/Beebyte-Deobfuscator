@@ -51,7 +51,7 @@ namespace Beebyte_Deobfuscator.Output
             return $"{ObfName}/{CleanName}";
         }
 
-        public static void Export(BeebyteDeobfuscatorPlugin plugin, LookupModel lookupModel)
+        public static void Export(BeebyteDeobfuscatorPlugin plugin, LookupModule lookupModel)
         {
             PluginServices services = PluginServices.For(plugin);
 
@@ -71,7 +71,7 @@ namespace Beebyte_Deobfuscator.Output
             }
         }
 
-        private static void ExportPlainText(string ExportPath, LookupModel lookupModel)
+        private static void ExportPlainText(string ExportPath, LookupModule lookupModel)
         {
             using var exportFile = new FileStream(ExportPath + Path.DirectorySeparatorChar + "output.txt", FileMode.Create);
             StreamWriter output = new StreamWriter(exportFile);
@@ -87,10 +87,10 @@ namespace Beebyte_Deobfuscator.Output
             output.Close();
         }
 
-        private static void ExportClasses(string ExportPath, string pluginName, LookupModel lookupModel, EventHandler<string> statusCallback = null)
+        private static void ExportClasses(string ExportPath, string pluginName, LookupModule lookupModel, EventHandler<string> statusCallback = null)
         {
             IEnumerable<Translation> translations = lookupModel.Translations.Where(t => 
-                !Regex.IsMatch(t.CleanName, @"\+<.*(?:>).*__[1-9]{ 0,4}|[A-z]*=.{1,4}|<.*>") &&
+                !Regex.IsMatch(t.CleanName, @"\+<.*(?:>).*__[1-9]{0,4}|[A-z]*=.{1,4}|<.*>") &&
                 !Regex.IsMatch(t.CleanName, lookupModel.NamingRegex) &&
                 (t._type?.DeclaringType.IsEmpty ?? false) &&
                 !(t._type?.IsArray ?? false) &&
@@ -103,10 +103,6 @@ namespace Beebyte_Deobfuscator.Output
             int total = translations.Count();
             foreach (Translation translation in translations)
             {
-                if(translation.CleanName == "Palette")
-                {
-
-                }
                 statusCallback?.Invoke(translations, $"Exported {current}/{total} classes");
 
                 FileStream exportFile = null;

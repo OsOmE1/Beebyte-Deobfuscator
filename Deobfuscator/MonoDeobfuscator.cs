@@ -7,7 +7,7 @@ namespace Beebyte_Deobfuscator.Deobfuscator
 {
     public class MonoDeobfuscator : IDeobfuscator
     {
-        public LookupModel Process(TypeModel model, BeebyteDeobfuscatorPlugin plugin)
+        public LookupModule Process(TypeModel model, BeebyteDeobfuscatorPlugin plugin)
         {
             PluginServices services = PluginServices.For(plugin);
 
@@ -25,8 +25,8 @@ namespace Beebyte_Deobfuscator.Deobfuscator
 
             services.StatusUpdate("Creating LookupModel for obfuscated application");
 
-            LookupModel lookupModel = new LookupModel(plugin.NamingRegex);
-            lookupModel.Init(model.ToLookupModule(lookupModel), monoDecompiler.GetLookupModule(lookupModel, statusCallback: services.StatusUpdate), statusCallback: services.StatusUpdate);
+            LookupModule lookupModel = new LookupModule(plugin.NamingRegex);
+            lookupModel.Init(model.ToLookupModel(statusCallback: services.StatusUpdate), LookupModel.FromModuleDef(monoDecompiler.Module, statusCallback: services.StatusUpdate), statusCallback: services.StatusUpdate);
             services.StatusUpdate("Deobfuscating binary");
             lookupModel.TranslateTypes(statusCallback: services.StatusUpdate);
 

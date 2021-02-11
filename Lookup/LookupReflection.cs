@@ -1,30 +1,41 @@
-﻿using Beebyte_Deobfuscator.Output;
+﻿using Beebyte_Deobfuscator.Lookup;
+using Beebyte_Deobfuscator.Output;
 using dnlib.DotNet;
 using Il2CppInspector.Model;
 using Il2CppInspector.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Beebyte_Deobfuscator.Lookup
 {
-    public class LookupModule
+    public class LookupModel
     {
-        public List<string> Namespaces;
-        public List<LookupType> Types;
-        public TypeModel TypeModel;
-        public AppModel AppModel;
-        public LookupModule(List<string> namespaces, List<LookupType> types, TypeModel model = null, EventHandler<string> statusCallback = null)
+        public List<TypeDef> ProcessedMonoTypes { get; } = new List<TypeDef>();
+        public List<TypeInfo> ProcessedIl2CppTypes { get; } = new List<TypeInfo>();
+        public Dictionary<TypeDef, LookupType> MonoTypeMatches { get; } = new Dictionary<TypeDef, LookupType>();
+        public Dictionary<TypeInfo, LookupType> Il2CppTypeMatches { get; } = new Dictionary<TypeInfo, LookupType>();
+
+        public List<string> Namespaces { get; } = new List<string>();
+        public List<LookupType> Types { get; } = new List<LookupType>();
+        public TypeModel TypeModel { get; set; }
+        public AppModel AppModel { get; set; }
+
+        public static LookupModel FromTypeModel(TypeModel typeModel, EventHandler<string> statusCallback = null)
         {
-            Namespaces = namespaces;
-            Types = types;
-            if(model != null)
-            {
-                TypeModel = model;
-                statusCallback?.Invoke(this, "Creating app model");
-                AppModel = new AppModel(model);
-            }
+            LookupModel model = new LookupModel();
+            model.Types.AddRange(typeModel.Types.ToLookupTypeList(model, statusCallback: statusCallback));
+            model.Namespaces.AddRange(typeModel.Types.Select(t => t.Namespace).Distinct());
+            model.TypeModel = typeModel;
+            model.AppModel = new AppModel(typeModel);
+            return model;
+        }
+        public static LookupModel FromModuleDef(ModuleDef moduleDef, EventHandler<string> statusCallback = null)
+        {
+            LookupModel model = new LookupModel();
+            model.Types.AddRange(moduleDef.Types.ToLookupTypeList(model, statusCallback: statusCallback));
+            model.Namespaces.AddRange(moduleDef.Types.Select(t => t.Namespace.String).Distinct());
+            return model;
         }
     }
     public class LookupType
@@ -37,15 +48,18 @@ namespace Beebyte_Deobfuscator.Lookup
         {
             get
             {
-                return Il2CppType?.BaseName ?? MonoType?.Name;
+                return Il2CppType?.Name ?? MonoType?.Name;
             }
             set
             {
                 if (Il2CppType != null)
                 {
-                    SetName(value);
+                    Il2CppType.Name = value;
                 }
-                else MonoType.Name = value;
+                else if (MonoType != null)
+                {
+                    MonoType.Name = value;
+                }
             }
         }
         public string CSharpName => Il2CppType?.CSharpName ?? MonoType?.Name ?? "";
@@ -59,7 +73,6 @@ namespace Beebyte_Deobfuscator.Lookup
         public LookupType ElementType { get; set; }
         public bool IsEmpty => Il2CppType == null && MonoType == null;
         public bool IsNested => Il2CppType?.IsNested ?? MonoType?.IsNested ?? false;
-        public bool ShouldTranslate => Regex.Match(Name, Owner.NamingRegex).Success || Fields.Any(f => Regex.Match(f.Name, Owner.NamingRegex).Success) || Fields.Any(f => f.Translated);
         public bool Translated { get; private set; }
         public Translation Translation { get; set; }
         public LookupType DeclaringType { get; set; }
@@ -69,27 +82,7 @@ namespace Beebyte_Deobfuscator.Lookup
         public List<LookupType> Children { get; set; }
         public bool Resolved { get; set; }
         public LookupType(LookupModel lookupModel) { Owner = lookupModel; }
-        public void SetName(string name)
-        {
-            if (!Regex.Match(Name, Owner.NamingRegex).Success && Fields.Any(f => Regex.Match(f.Name, Owner.NamingRegex).Success))
-            {
-                Translation = new Translation(Name, this);
-                Owner.Translations.Add(Translation);
-                return;
-            }
 
-            string obfName = Name;
-
-            if (!ShouldTranslate || IsEnum)
-            {
-                return;
-            }
-
-            Il2CppType.Name = name;
-            Translation = new Translation(obfName, this);
-            Owner.Translations.Add(Translation);
-            Translated = true;
-        }
         public bool FieldSequenceEqual(IEnumerable<string> baseNames)
         {
             var fieldBaseNames = Fields.Where(f => !f.IsLiteral && !f.IsStatic).Select(f => f.Type.Name).ToList();
@@ -155,7 +148,7 @@ namespace Beebyte_Deobfuscator.Lookup
             }
         }
 
-        public string GetExportTypeName(bool checktranslations = true)
+        public override string ToString()
         {
             if (IsPrimitive)
             {
@@ -165,30 +158,23 @@ namespace Beebyte_Deobfuscator.Lookup
             string typename = "";
             if (!IsEmpty)
             {
-                if (Owner.Translations.Any(t => t.CleanName == Name) || !checktranslations)
-                {
-                    typename = CSharpName;
-                }
+                typename = CSharpName;
             }
             if (typename == "")
             {
                 typename = "object";
             }
-            return typename;
-        }
-        public override string ToString()
-        {
-            string typename = "";
+
             if (IsArray)
             {
-                typename = $"{ElementType?.GetExportTypeName(false) ?? "object"}[]";
+                typename = $"{ElementType?.ToString() ?? "object"}[]";
             }
             else if (IsGenericType && GenericTypeParameters.Any())
             {
                 typename = Name.Split("`")[0] + "<";
                 foreach (LookupType t in GenericTypeParameters)
                 {
-                    typename += t.GetExportTypeName(false) + (GenericTypeParameters[GenericTypeParameters.Count() - 1] != t ? ", " : "");
+                    typename += t.ToString() + (GenericTypeParameters[GenericTypeParameters.Count() - 1] != t ? ", " : "");
                 }
                 typename += ">";
             }
@@ -214,9 +200,9 @@ namespace Beebyte_Deobfuscator.Lookup
             {
                 if (Il2CppField != null)
                 {
-                    SetName(value);
+                    Il2CppField.Name = value;
                 }
-                else
+                else if (MonoField != null)
                 {
                     MonoField.Name = value;
                 }
@@ -234,49 +220,9 @@ namespace Beebyte_Deobfuscator.Lookup
         public LookupType Type { get; set; }
         public LookupType DeclaringType { get; set; }
         public LookupField(LookupModel lookupModel) { Owner = lookupModel; }
-
-        public void SetName(string name)
-        {
-            string obfName = Name;
-
-            if (!Regex.Match(obfName, Owner.NamingRegex).Success)
-            {
-                return;
-            }
-
-            Il2CppField.Name = name;
-            Translation = new Translation(obfName, this);
-            Owner.Translations.Add(Translation);
-            Translated = true;
-        }
-        public string ToFieldExport()
-        {
-            string modifiers = $"[TranslatorFieldOffset(0x{Offset:X})]{(IsStatic ? " static" : "")}{(IsPublic ? " public" : "")}{(IsPrivate ? " private" : "")}";
-            string fieldType = "";
-            if (Type.IsArray)
-            {
-                fieldType = $"{Type.ElementType?.GetExportTypeName() ?? "object"}[]";
-            }
-            else if (Type.IsGenericType && Type.GenericTypeParameters.Any())
-            {
-                fieldType = Type.Name.Split("`")[0] + "<";
-                foreach (LookupType type in Type.GenericTypeParameters)
-                {
-                    fieldType += type.GetExportTypeName() + (Type.GenericTypeParameters[Type.GenericTypeParameters.Count() - 1] != type ? ", " : "");
-                }
-                fieldType += ">";
-            }
-            else
-            {
-                fieldType = Type.GetExportTypeName();
-            }
-            return $"        {modifiers} {fieldType} {Name};";
-        }
-        public override string ToString()
-        {
-            return CSharpName;
-        }
+        public override string ToString() => CSharpName;
     }
+
 
     public class LookupProperty
     {
@@ -293,9 +239,9 @@ namespace Beebyte_Deobfuscator.Lookup
             {
                 if (Il2CppProperty != null)
                 {
-                    SetName(value);
+                    Il2CppProperty.Name = value;
                 }
-                else
+                else if (MonoProperty != null)
                 {
                     MonoProperty.Name = value;
                 }
@@ -309,19 +255,6 @@ namespace Beebyte_Deobfuscator.Lookup
         public bool Translated { get; private set; } = false;
         public bool IsEmpty => Il2CppProperty == null && MonoProperty == null;
         public LookupProperty(LookupModel lookupModel) { Owner = lookupModel; }
-
-        public void SetName(string name)
-        {
-            string obfName = Name;
-
-            if (!Regex.Match(obfName, Owner.NamingRegex).Success)
-            {
-                return;
-            }
-
-            Il2CppProperty.Name = name;
-            Translated = true;
-        }
 
         public override string ToString()
         {
@@ -345,9 +278,9 @@ namespace Beebyte_Deobfuscator.Lookup
             {
                 if (Il2CppMethod != null)
                 {
-                    SetName(value);
+                    Il2CppMethod.Name = value;
                 }
-                else
+                else if (MonoMethod != null)
                 {
                     MonoMethod.Name = value;
                 }
@@ -357,17 +290,17 @@ namespace Beebyte_Deobfuscator.Lookup
         public LookupType DeclaringType { get; set; }
         public LookupType ReturnType { get; set; }
         public List<LookupType> ParameterList { get; set; }
-        public bool Translated { get; private set; }
         public bool IsEmpty => Il2CppMethod == null && MonoMethod == null;
+        public ulong Address => Il2CppMethod?.VirtualAddress?.Start ?? 0x0;
         public bool IsPropertymethod
         {
             get
             {
-                if(DeclaringType.IsEmpty)
+                if (DeclaringType.IsEmpty)
                 {
                     return false;
                 }
-                if(DeclaringType.Properties != null)
+                if (DeclaringType.Properties != null)
                 {
                     List<LookupMethod> ts = DeclaringType.Properties.Select(p => p.GetMethod).Union(DeclaringType.Properties.Select(p => p.SetMethod)).ToList();
                     if (ts.Any(m => m.Name == Name))
@@ -380,34 +313,6 @@ namespace Beebyte_Deobfuscator.Lookup
         }
         public LookupMethod(LookupModel lookupModel) { Owner = lookupModel; }
 
-        public void SetName(string name)
-        {
-            string obfName = Name;
-
-            if (!Regex.Match(obfName, Owner.NamingRegex).Success)
-            {
-                return;
-            }
-
-            Il2CppMethod.Name = name;
-            Translated = true;
-        }
-
-        public ulong GetAddress(AppModel model)
-        {
-            if(model == null)
-            {
-                return 0x0;
-            }
-
-            AddressMap map = model.GetAddressMap();
-            ulong adress = map.Where(k => k.Value is AppMethod).FirstOrDefault(m => ((AppMethod)m.Value).Method == ((MethodBase)Il2CppMethod)).Key;
-            return adress;
-        }
-
-        public override string ToString()
-        {
-            return CSharpName;
-        }
+        public override string ToString() => CSharpName;
     }
 }

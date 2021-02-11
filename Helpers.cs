@@ -26,7 +26,7 @@ namespace Beebyte_Deobfuscator
             return true;
         }
 
-        public static float CompareFieldOffsets(LookupType t1, LookupType t2, LookupModel lookupModel)
+        public static float CompareFieldOffsets(LookupType t1, LookupType t2, LookupModule lookupModel)
         {
             if (t1.Il2CppType == null || t2.Il2CppType == null)
             {
@@ -64,7 +64,7 @@ namespace Beebyte_Deobfuscator
             return comparative_score;
         }
 
-        public static float CompareFieldTypes(LookupType t1, LookupType t2, LookupModel lookupModel)
+        public static float CompareFieldTypes(LookupType t1, LookupType t2, LookupModule lookupModel)
         {
             float comparative_score = 1.0f;
 

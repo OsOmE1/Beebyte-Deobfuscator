@@ -1,23 +1,31 @@
 ﻿using Beebyte_Deobfuscator.Lookup;
+using Beebyte_Deobfuscator.Output;
 using dnlib.DotNet;
+using Il2CppInspector.Model;
 using Il2CppInspector.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Beebyte_Deobfuscator
 {
     public static class Extensions
     {
-        public static LookupModule ToLookupModule(this TypeModel model, LookupModel lookupModel, EventHandler<string> statusCallback = null)
+        public static LookupModel ToLookupModel(this TypeModel typeModel, EventHandler<string> statusCallback = null)
         {
-            return new LookupModule(model.Namespaces, model.Types.Where(
+            LookupModel model = new LookupModel();
+            model.Types.AddRange(typeModel.Types.Where(
                 t => t.Namespace != "System" &&
                 t.BaseType?.Namespace != "System" &&
                 !t.Namespace.Contains("UnityEngine")
                 )
-                .ToLookupTypeList(lookupModel, statusCallback: statusCallback).ToList(), model, statusCallback);
+                .ToLookupTypeList(model, statusCallback: statusCallback));
+            model.Namespaces.AddRange(typeModel.Types.Select(t => t.Namespace).Distinct());
+            model.TypeModel = typeModel;
+            model.AppModel = new AppModel(typeModel);
+            return model;
         }
 
         public static LookupType ToLookupType(this TypeInfo type, LookupModel lookupModel, bool recurse)
@@ -307,6 +315,94 @@ namespace Beebyte_Deobfuscator
                 typeDef = type.ToGenericInstSig().ToTypeDefOrRef().ResolveTypeDef();
             }
             return typeDef;
+        }
+        public static bool ShouldTranslate(this LookupType type, LookupModule module) => Regex.Match(type.Name, module.NamingRegex).Success ||
+            type.Fields.Any(f => Regex.Match(f.Name, module.NamingRegex).Success) || type.Fields.Any(f => f.Translated);
+
+        public static void SetName(this LookupType type, string name, LookupModule module)
+        {
+            if (!Regex.Match(type.Name, module.NamingRegex).Success && type.Fields.Any(f => Regex.Match(f.Name, module.NamingRegex).Success))
+            {
+                var t = new Translation(type.Name, type);
+                module.Translations.Add(t);
+                return;
+            }
+
+            string obfName = type.Name;
+
+            if (!type.ShouldTranslate(module) || type.IsEnum)
+            {
+                return;
+            }
+
+            type.Il2CppType.Name = name;
+            var translation = new Translation(obfName, type);
+            module.Translations.Add(translation);
+        }
+        public static void SetName(this LookupMethod method, string name, string namingRegex)
+        {
+            string obfName = method.Name;
+
+            if (!Regex.Match(obfName, namingRegex).Success)
+            {
+                return;
+            }
+            if(method.Il2CppMethod != null)
+            {
+                method.Il2CppMethod.Name = name;
+            }
+        }
+        public static void SetName(this LookupProperty property, string name, string namingRegex)
+        {
+            string obfName = property.Name;
+
+            if (!Regex.Match(obfName, namingRegex).Success)
+            {
+                return;
+            }
+            if (property.Il2CppProperty != null)
+            {
+                property.Il2CppProperty.Name = name;
+            }
+        }
+        public static void SetName(this LookupField field, string name, LookupModule module)
+        {
+            string obfName = field.Name;
+
+            if (!Regex.Match(obfName, module.NamingRegex).Success)
+            {
+                return;
+            }
+
+            if (field.Il2CppField != null)
+            {
+                field.Il2CppField.Name = name;
+            }
+            var translation = new Translation(obfName, field);
+            module.Translations.Add(translation);
+        }
+        public static string ToFieldExport(this LookupField field)
+        {
+            string modifiers = $"[TranslatorFieldOffset(0x{field.Offset:X})]{(field.IsStatic ? " static" : "")}{(field.IsPublic ? " public" : "")}{(field.IsPrivate ? " private" : "")}";
+            string fieldType = "";
+            if (field.Type.IsArray)
+            {
+                fieldType = $"{field.Type.ElementType?.ToString() ?? "object"}[]";
+            }
+            else if (field.Type.IsGenericType && field.Type.GenericTypeParameters.Any())
+            {
+                fieldType = field.Type.Name.Split("`")[0] + "<";
+                foreach (LookupType type in field.Type.GenericTypeParameters)
+                {
+                    fieldType += type.ToString() + (field.Type.GenericTypeParameters[field.Type.GenericTypeParameters.Count() - 1] != type ? ", " : "");
+                }
+                fieldType += ">";
+            }
+            else
+            {
+                fieldType = field.Type.ToString();
+            }
+            return $"        {modifiers} {fieldType} {field.Name};";
         }
     }
 }

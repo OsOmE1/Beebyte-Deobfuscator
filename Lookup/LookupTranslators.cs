@@ -5,7 +5,7 @@ namespace Beebyte_Deobfuscator.Lookup
 {
     class LookupTranslators
     {
-        public static void TranslateChildren(LookupType obfType, LookupType cleanType, bool checkoffsets, LookupModel lookupModel)
+        public static void TranslateChildren(LookupType obfType, LookupType cleanType, bool checkoffsets, LookupModule lookupModel)
         {
             List<LookupType> obfChildren = obfType.Children;
             List<LookupType> cleanChildren = cleanType.Children;
@@ -44,12 +44,12 @@ namespace Beebyte_Deobfuscator.Lookup
                     continue;
                 }
 
-                obfChild.Name = best_match.Name;
+                obfChild.SetName(best_match.Name, lookupModel);
                 TranslateFields(obfChild, best_match, checkoffsets, lookupModel);
             }
         }
 
-        public static void TranslateFields(LookupType obfType, LookupType cleanType, bool checkoffsets, LookupModel lookupModel)
+        public static void TranslateFields(LookupType obfType, LookupType cleanType, bool checkoffsets, LookupModule lookupModel)
         {
             List<LookupField> obfGenericFields = obfType.Fields.Where(f => !f.IsStatic && !f.IsLiteral).ToList();
             List<LookupField> cleanGenericFields = cleanType.Fields.Where(f => !f.IsStatic && !f.IsLiteral).ToList();
@@ -63,7 +63,7 @@ namespace Beebyte_Deobfuscator.Lookup
                 LookupField cleanField = cleanGenericFields[obField.Index];
                 if ((obField.Value.Offset == cleanField.Offset || !checkoffsets) && obField.Value.Name != cleanField.Name)
                 {
-                    obField.Value.Name = cleanField.Name;
+                    obField.Value.SetName(cleanField.Name, lookupModel);
                 }
             }
 
@@ -79,7 +79,7 @@ namespace Beebyte_Deobfuscator.Lookup
                 LookupField cleanField = cleanStaticFields[obField.Index];
                 if ((obField.Value.Offset == cleanField.Offset || !checkoffsets) && obField.Value.Name != cleanField.Name)
                 {
-                    obField.Value.Name = cleanField.Name;
+                    obField.Value.SetName(cleanField.Name, lookupModel);
                 }
             }
         }
