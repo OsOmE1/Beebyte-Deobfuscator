@@ -23,7 +23,17 @@ u091Eu091Fu0927u0924u0929u0927u0920u0928u0926u091Cu091D: `^[\u0900-\u097F]{11}$`
 UOiWPrj: `^[A-Za-\u0082\[\]\^]{7}$` (Garena Free Fire)
 
 ## Exports
-Theres two different kinds of exports:  
+Theres four different kinds of exports:  
+
+### Plain Text
 Plain Text creates a output.txt file with every translation formatted in this way: `ObfuscatedName/DeobfuscatedName`.  
+
+### Il2CppTranslator Classes
 Classes for [Il2CppTranslator](https://github.com/OsOmE1/Il2CppTranslator) creates classes you can use in your own plugin project.  
 If you use export Classes you can set your plugin name and it will create all the classes with the namespace `YourPluginName.Translators`.
+
+### Json Translations
+A JSON file containing all the translation in a dictionary form like this `"ObfuscatedName" : "DeobfuscatedName"`
+
+### Json Mappings
+A JSON file containing a lot of information that is easily customizable
