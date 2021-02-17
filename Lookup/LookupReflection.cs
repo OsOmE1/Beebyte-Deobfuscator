@@ -3,6 +3,7 @@ using dnlib.DotNet;
 using Il2CppInspector.Model;
 using Il2CppInspector.Reflection;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,15 +11,11 @@ namespace Beebyte_Deobfuscator.Lookup
 {
     public class LookupModel
     {
-        public List<TypeDef> ProcessedMonoTypes { get; } = new List<TypeDef>();
-        public List<TypeInfo> ProcessedIl2CppTypes { get; } = new List<TypeInfo>();
-        public Dictionary<TypeDef, LookupType> MonoTypeMatches { get; } = new Dictionary<TypeDef, LookupType>();
-        public Dictionary<TypeInfo, LookupType> Il2CppTypeMatches { get; } = new Dictionary<TypeInfo, LookupType>();
-
+        public ConcurrentDictionary<TypeDef, LookupType> MonoTypeMatches { get; } = new ConcurrentDictionary<TypeDef, LookupType>();
+        public ConcurrentDictionary<TypeInfo, LookupType> Il2CppTypeMatches { get; } = new ConcurrentDictionary<TypeInfo, LookupType>();
         public List<string> Namespaces { get; } = new List<string>();
         public List<LookupType> Types { get; } = new List<LookupType>();
         public TypeModel TypeModel { get; set; }
-        public AppModel AppModel { get; set; }
 
         public static LookupModel FromTypeModel(TypeModel typeModel, EventHandler<string> statusCallback = null)
         {
@@ -26,7 +23,6 @@ namespace Beebyte_Deobfuscator.Lookup
             model.Types.AddRange(typeModel.Types.ToLookupTypeList(model, statusCallback: statusCallback));
             model.Namespaces.AddRange(typeModel.Types.Select(t => t.Namespace).Distinct());
             model.TypeModel = typeModel;
-            model.AppModel = new AppModel(typeModel);
             return model;
         }
         public static LookupModel FromModuleDef(ModuleDef moduleDef, EventHandler<string> statusCallback = null)

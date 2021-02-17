@@ -129,10 +129,6 @@ namespace Beebyte_Deobfuscator.Lookup
             int current = 0;
             foreach (var type in filteredTypes)
             {
-                if (type.Key == "GhostAI")
-                {
-
-                }
                 current++;
                 LookupType matchingType = GetMatchingType(type.Value, checkoffsets);
                 if (matchingType == null)

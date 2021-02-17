@@ -24,7 +24,6 @@ namespace Beebyte_Deobfuscator
                 .ToLookupTypeList(model, statusCallback: statusCallback));
             model.Namespaces.AddRange(typeModel.Types.Select(t => t.Namespace).Distinct());
             model.TypeModel = typeModel;
-            model.AppModel = new AppModel(typeModel);
             return model;
         }
 
@@ -34,12 +33,11 @@ namespace Beebyte_Deobfuscator
             {
                 return new LookupType(lookupModel);
             }
+            lookupModel.Il2CppTypeMatches.GetOrAdd(type, new LookupType(lookupModel) { Il2CppType = type, Children = new List<LookupType>() });
 
-            if (!lookupModel.ProcessedIl2CppTypes.Contains(type))
+            if (lookupModel.Il2CppTypeMatches[type].Resolved)
             {
-                lookupModel.ProcessedIl2CppTypes.Add(type);
-                LookupType t = new LookupType(lookupModel) { Il2CppType = type, Children = new List<LookupType>() };
-                lookupModel.Il2CppTypeMatches.Add(type, t);
+                return lookupModel.Il2CppTypeMatches[type];
             }
 
             if (lookupModel.Il2CppTypeMatches[type].IsGenericType)
@@ -55,7 +53,7 @@ namespace Beebyte_Deobfuscator
                 }
             }
 
-            if (!recurse || lookupModel.Il2CppTypeMatches[type].Fields != null)
+            if (!recurse)
             {
                 return lookupModel.Il2CppTypeMatches[type];
             }
@@ -79,12 +77,13 @@ namespace Beebyte_Deobfuscator
             {
                 return new LookupType(lookupModel);
             }
-            if (!lookupModel.ProcessedMonoTypes.Contains(type))
+
+            lookupModel.MonoTypeMatches.GetOrAdd(type, new LookupType(lookupModel) { MonoType = type, Children = new List<LookupType>() });
+            if (lookupModel.MonoTypeMatches[type].Resolved)
             {
-                lookupModel.ProcessedMonoTypes.Add(type);
-                LookupType t = new LookupType(lookupModel) { MonoType = type, Children = new List<LookupType>() };
-                lookupModel.MonoTypeMatches.Add(type, t);
+                return lookupModel.MonoTypeMatches[type];
             }
+
             if (lookupModel.MonoTypeMatches[type].IsGenericType)
             {
                 lookupModel.MonoTypeMatches[type].GenericTypeParameters = lookupModel.MonoTypeMatches[type].MonoType.GenericParameters.Select(p => p.DeclaringType).Where(t => t != type).ToLookupTypeList(lookupModel, false).ToList();
@@ -98,7 +97,7 @@ namespace Beebyte_Deobfuscator
                 }
             }
 
-            if (!recurse || lookupModel.MonoTypeMatches[type].Fields != null)
+            if (!recurse)
             {
                 return lookupModel.MonoTypeMatches[type];
             }
@@ -119,31 +118,33 @@ namespace Beebyte_Deobfuscator
         public static IEnumerable<LookupType> ToLookupTypeList(this IEnumerable<TypeDef> monoTypes, LookupModel lookupModel, bool recurse = true, EventHandler<string> statusCallback = null)
         {
             int current = 0;
-            int total = monoTypes.Count(t => !t.IsNested);
-            foreach (TypeDef type in monoTypes)
+            var filteredTypes = monoTypes.Where(t => !t.IsNested);
+            int total = filteredTypes.Count();
+            return filteredTypes
+                .AsParallel()
+                .WithDegreeOfParallelism(Math.Max(Environment.ProcessorCount / 2, 1))
+                .Select(type =>
             {
-                if (!type.IsNested)
-                {
-                    current++;
-                    statusCallback?.Invoke(null, $"Loaded {current}/{total} types...");
-                    yield return type.ToLookupType(lookupModel, recurse);
-                }
-            }
+                current++;
+                statusCallback?.Invoke(null, $"Loaded {current}/{total} types...");
+                return type.ToLookupType(lookupModel, recurse);
+            });
         }
 
         public static IEnumerable<LookupType> ToLookupTypeList(this IEnumerable<TypeInfo> il2cppTypes, LookupModel lookupModel, bool recurse = true, EventHandler<string> statusCallback = null)
         {
             int current = 0;
-            int total = il2cppTypes.Count(t => !t.IsNested);
-            foreach (TypeInfo type in il2cppTypes)
+            var filteredTypes = il2cppTypes.Where(t => !t.IsNested);
+            int total = filteredTypes.Count();
+            return filteredTypes
+                .AsParallel()
+                .WithDegreeOfParallelism(Math.Max(Environment.ProcessorCount / 2, 1))
+                .Select(type =>
             {
-                if (!type.IsNested)
-                {
-                    current++;
-                    statusCallback?.Invoke(null, $"Loaded {current}/{total} types...");
-                    yield return type.ToLookupType(lookupModel, recurse);
-                }
-            }
+                current++;
+                statusCallback?.Invoke(null, $"Loaded {current}/{total} types...");
+                return type.ToLookupType(lookupModel, recurse);
+            });
         }
 
         public static LookupField ToLookupField(this FieldInfo field, LookupModel lookupModel)
