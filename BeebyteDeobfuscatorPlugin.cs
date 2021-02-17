@@ -18,7 +18,7 @@ namespace Beebyte_Deobfuscator
 
         public string Author => "OsOmE1";
 
-        public string Version => "1.0.0";
+        public string Version => "1.1.0";
 
         public string Description => "Performs comparative deobfuscation for Beebyte";
 
