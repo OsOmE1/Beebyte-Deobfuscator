@@ -1,10 +1,10 @@
 ﻿using Beebyte_Deobfuscator.Lookup;
+using Beebyte_Deobfuscator.Output.Generators;
 using Il2CppInspector.PluginAPI;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Beebyte_Deobfuscator.Output
 {
@@ -19,16 +19,35 @@ namespace Beebyte_Deobfuscator.Output
         None,
         PlainText,
         Classes,
+        JsonTranslations,
+        JsonMappings
     }
 
-    public class Translation
+    public interface IGenerator
     {
-        private readonly TranslationType Type;
+        public abstract void Generate(BeebyteDeobfuscatorPlugin plugin, LookupModule module);
+
+        public static IGenerator GetGenerator(BeebyteDeobfuscatorPlugin plugin)
+        {
+            return plugin.Export switch
+            {
+                ExportType.Classes => new Il2CppTranslatorGenerator(),
+                ExportType.PlainText => new PlaintextTranslationsGenerator(),
+                ExportType.JsonTranslations => new JsonTranslationsGenerator(),
+                ExportType.JsonMappings => new JsonMappingGenerator(),
+                _ => null,
+            };
+        }
+    }
+
+    public class Translation : IEquatable<Translation>
+    {
+        public readonly TranslationType Type;
         public string ObfName;
         public string CleanName;
 
         public LookupField _field;
-        private LookupType _type;
+        public LookupType _type;
 
         public Translation(string obfName, LookupType type)
         {
@@ -46,111 +65,35 @@ namespace Beebyte_Deobfuscator.Output
             Type = TranslationType.FieldTranslation;
         }
 
-        public string ToPlainExport()
-        {
-            return $"{ObfName}/{CleanName}";
-        }
-
-        public static void Export(BeebyteDeobfuscatorPlugin plugin, LookupModule lookupModel)
+        public static void Export(BeebyteDeobfuscatorPlugin plugin, LookupModule lookupModule)
         {
             PluginServices services = PluginServices.For(plugin);
 
             services.StatusUpdate("Generating output..");
-            if (!lookupModel.Translations.Any(t => t.CleanName != t.ObfName))
+            if (!lookupModule.Translations.Any(t => t.CleanName != t.ObfName))
             {
                 return;
             }
-            switch (plugin.Export)
-            {
-                case ExportType.PlainText:
-                    ExportPlainText(plugin.ExportPath, lookupModel);
-                    break;
-                case ExportType.Classes:
-                    ExportClasses(plugin.ExportPath, plugin.PluginName, lookupModel, statusCallback: services.StatusUpdate);
-                    break;
-            }
+            List<Translation> filteredTranslations = lookupModule.Translations
+                .Where(t => !t.CleanName.EndsWith('&'))
+                .GroupBy(t => t.CleanName)
+                .Select(t => t.First())
+                .GroupBy(t => t.ObfName)
+                .Select(t => t.First())
+                .ToList();
+            lookupModule.Translations.Clear();
+            lookupModule.Translations.AddRange(filteredTranslations);
+
+            IGenerator.GetGenerator(plugin).Generate(plugin, lookupModule);
         }
 
-        private static void ExportPlainText(string ExportPath, LookupModule lookupModel)
+        public bool Equals([AllowNull] Translation other)
         {
-            using var exportFile = new FileStream(ExportPath + Path.DirectorySeparatorChar + "output.txt", FileMode.Create);
-            StreamWriter output = new StreamWriter(exportFile);
-
-            foreach (Translation translation in lookupModel.Translations)
-            {
-                if (translation.CleanName != translation.ObfName)
-                {
-                    output.WriteLine(translation.ToPlainExport());
-                }
-            }
-
-            output.Close();
+            return other.CleanName == CleanName && other.ObfName == ObfName;
         }
-
-        private static void ExportClasses(string ExportPath, string pluginName, LookupModule lookupModel, EventHandler<string> statusCallback = null)
+        public override string ToString()
         {
-            IEnumerable<Translation> translations = lookupModel.Translations.Where(t => 
-                !Regex.IsMatch(t.CleanName, @"\+<.*(?:>).*__[1-9]{0,4}|[A-z]*=.{1,4}|<.*>") &&
-                !Regex.IsMatch(t.CleanName, lookupModel.NamingRegex) &&
-                (t._type?.DeclaringType.IsEmpty ?? false) &&
-                !(t._type?.IsArray ?? false) &&
-                !(t._type?.IsGenericType ?? false) &&
-                !(t._type?.IsNested ?? false) &&
-                !(t._type?.Namespace.Contains("System") ?? false) &&
-                !(t._type?.Namespace.Contains("MS") ?? false)
-            );
-            int current = 0;
-            int total = translations.Count();
-            foreach (Translation translation in translations)
-            {
-                statusCallback?.Invoke(translations, $"Exported {current}/{total} classes");
-
-                FileStream exportFile = null;
-                if (!translation.CleanName.Contains("+"))
-                {
-                    exportFile = new FileStream(ExportPath +
-                        Path.DirectorySeparatorChar +
-                        $"{Helpers.SanitizeFileName(translation.CleanName)}.cs",
-                        FileMode.Create);
-                }
-                else
-                {
-                    if(!File.Exists($"{Helpers.SanitizeFileName(translation.CleanName.Split("+")[0])}.cs"))
-                    {
-                        continue;
-                    }
-                    var lines = File.ReadAllLines($"{Helpers.SanitizeFileName(translation.CleanName.Split("+")[0])}.cs");
-                    File.WriteAllLines($"{Helpers.SanitizeFileName(translation.CleanName.Split("+")[0])}.cs", lines.Take(lines.Length - 1).ToArray());
-                    exportFile = new FileStream(ExportPath +
-                        Path.DirectorySeparatorChar +
-                        $"{Helpers.SanitizeFileName(translation.CleanName.Split("+")[0])}.cs",
-                        FileMode.Open);
-                }
-
-                StreamWriter output = new StreamWriter(exportFile);
-
-                if (!translation.CleanName.Contains("+"))
-                {
-                    string start = Output.ClassOutputTop;
-                    start = start.Replace("#PLUGINNAME#", pluginName);
-                    output.Write(start);
-                    output.Write($"    [Translator]\n    public struct {translation.CleanName}\n    {{\n");
-                }
-                else
-                {
-                    var names = translation.CleanName.Split("+").ToList();
-                    names.RemoveAt(0);
-                    output.Write($"    [Translator]\n    public struct {string.Join('.', names)}\n    {{\n");
-                }
-                foreach (LookupField f in translation._type.Fields)
-                {
-                    output.WriteLine(f.ToFieldExport());
-                }
-                output.Write("    }\n}");
-
-                output.Close();
-                current++;
-            }
+            return $"{ObfName}/{CleanName}";
         }
     }
 }

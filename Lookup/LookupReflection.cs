@@ -1,5 +1,4 @@
-﻿using Beebyte_Deobfuscator.Lookup;
-using Beebyte_Deobfuscator.Output;
+﻿using Beebyte_Deobfuscator.Output;
 using dnlib.DotNet;
 using Il2CppInspector.Model;
 using Il2CppInspector.Reflection;

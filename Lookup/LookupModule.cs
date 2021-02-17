@@ -1,6 +1,4 @@
 ﻿using Beebyte_Deobfuscator.Output;
-using dnlib.DotNet;
-using Il2CppInspector.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -76,7 +74,7 @@ namespace Beebyte_Deobfuscator.Lookup
             if (types.Count() == 1 && types[0] != null)
             {
                 bool t1 = !MatchedTypes.Contains(types[0]);
-                bool t2 = !CleanTypeNames.Contains(types[0].Name);
+                bool t2 = !CleanTypeNames.Contains(types[0].Name) || types[0].Fields.Any(f => Regex.IsMatch(f.Name, NamingRegex));
                 if (t1 && t2)
                 {
                     MatchedTypes.Add(types[0]);
@@ -89,7 +87,7 @@ namespace Beebyte_Deobfuscator.Lookup
 
             foreach (LookupType t in types)
             {
-                if (MatchedTypes.Contains(t) || CleanTypeNames.Contains(t.Name))
+                if (MatchedTypes.Contains(t) || (CleanTypeNames.Contains(t.Name) && !t.Fields.Any(f => Regex.IsMatch(f.Name, NamingRegex))))
                 {
                     continue;
                 }
@@ -131,6 +129,10 @@ namespace Beebyte_Deobfuscator.Lookup
             int current = 0;
             foreach (var type in filteredTypes)
             {
+                if (type.Key == "GhostAI")
+                {
+
+                }
                 current++;
                 LookupType matchingType = GetMatchingType(type.Value, checkoffsets);
                 if (matchingType == null)

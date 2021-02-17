@@ -104,7 +104,9 @@ namespace Beebyte_Deobfuscator
             {
                 [ExportType.None] = "None",
                 [ExportType.Classes] = "Classes for Il2CppTranslator",
-                [ExportType.PlainText] = "Plain Text"
+                [ExportType.PlainText] = "Plain Text",
+                [ExportType.JsonTranslations] = "Json Translations",
+                [ExportType.JsonMappings] = "Json Mappings"
             },
 
             Style = PluginOptionChoiceStyle.Dropdown

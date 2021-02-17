@@ -1,9 +1,5 @@
-﻿using Beebyte_Deobfuscator.Lookup;
-using dnlib.DotNet;
-using System;
-using System.Collections.Generic;
+﻿using dnlib.DotNet;
 using System.IO;
-using System.Linq;
 
 namespace Beebyte_Deobfuscator.MonoDecompiler
 {

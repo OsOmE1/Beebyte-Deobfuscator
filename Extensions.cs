@@ -54,7 +54,7 @@ namespace Beebyte_Deobfuscator
                     lookupModel.Il2CppTypeMatches[type].ElementType = elementType.ToLookupType(lookupModel, false);
                 }
             }
-            
+
             if (!recurse || lookupModel.Il2CppTypeMatches[type].Fields != null)
             {
                 return lookupModel.Il2CppTypeMatches[type];
@@ -92,7 +92,7 @@ namespace Beebyte_Deobfuscator
             if (lookupModel.MonoTypeMatches[type].IsArray)
             {
                 TypeDef elementType = lookupModel.MonoTypeMatches[type].MonoType.TryGetArraySig()?.TryGetTypeDef();
-                if(elementType != null && elementType != type)
+                if (elementType != null && elementType != type)
                 {
                     lookupModel.MonoTypeMatches[type].ElementType = elementType.ToLookupType(lookupModel, false) ?? new LookupType(lookupModel);
                 }
@@ -302,7 +302,7 @@ namespace Beebyte_Deobfuscator
             {
                 return typeDef;
             }
-            if(type.IsArray)
+            if (type.IsArray)
             {
                 typeDef = type.Next.ToTypeDefOrRef().ResolveTypeDef();
             }
@@ -310,7 +310,7 @@ namespace Beebyte_Deobfuscator
             {
                 return typeDef;
             }
-            if(type.IsGenericInstanceType)
+            if (type.IsGenericInstanceType)
             {
                 typeDef = type.ToGenericInstSig().ToTypeDefOrRef().ResolveTypeDef();
             }
@@ -323,12 +323,13 @@ namespace Beebyte_Deobfuscator
         {
             if (!Regex.Match(type.Name, module.NamingRegex).Success && type.Fields.Any(f => Regex.Match(f.Name, module.NamingRegex).Success))
             {
-                var t = new Translation(type.Name, type);
+                var t = new Translation(type.CSharpName, type);
                 module.Translations.Add(t);
+                type.Translation = t;
                 return;
             }
 
-            string obfName = type.Name;
+            string obfName = type.CSharpName;
 
             if (!type.ShouldTranslate(module) || type.IsEnum)
             {
@@ -338,25 +339,22 @@ namespace Beebyte_Deobfuscator
             type.Il2CppType.Name = name;
             var translation = new Translation(obfName, type);
             module.Translations.Add(translation);
+            type.Translation = translation;
         }
         public static void SetName(this LookupMethod method, string name, string namingRegex)
         {
-            string obfName = method.Name;
-
-            if (!Regex.Match(obfName, namingRegex).Success)
+            if (!Regex.Match(method.Name, namingRegex).Success)
             {
                 return;
             }
-            if(method.Il2CppMethod != null)
+            if (method.Il2CppMethod != null)
             {
                 method.Il2CppMethod.Name = name;
             }
         }
         public static void SetName(this LookupProperty property, string name, string namingRegex)
         {
-            string obfName = property.Name;
-
-            if (!Regex.Match(obfName, namingRegex).Success)
+            if (!Regex.Match(property.Name, namingRegex).Success)
             {
                 return;
             }
@@ -367,9 +365,9 @@ namespace Beebyte_Deobfuscator
         }
         public static void SetName(this LookupField field, string name, LookupModule module)
         {
-            string obfName = field.Name;
+            string obfName = field.CSharpName;
 
-            if (!Regex.Match(obfName, module.NamingRegex).Success)
+            if (!Regex.Match(field.Name, module.NamingRegex).Success)
             {
                 return;
             }
@@ -380,6 +378,7 @@ namespace Beebyte_Deobfuscator
             }
             var translation = new Translation(obfName, field);
             module.Translations.Add(translation);
+            field.Translation = translation;
         }
         public static string ToFieldExport(this LookupField field)
         {

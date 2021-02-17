@@ -1,5 +1,4 @@
 ﻿using Beebyte_Deobfuscator.Lookup;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
